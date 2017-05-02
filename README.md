@@ -1,6 +1,6 @@
 # Fuse
 
-[![CI Status](http://img.shields.io/travis/krisk/Fuse.svg?style=flat)](https://travis-ci.org/krisk/Fuse)
+[![CI Status](http://img.shields.io/travis/krisk/fuse-swift.svg?style=flat)](https://travis-ci.org/krisk/fuse-swift)
 [![Version](https://img.shields.io/cocoapods/v/Fuse.svg?style=flat)](http://cocoapods.org/pods/Fuse)
 [![License](https://img.shields.io/cocoapods/l/Fuse.svg?style=flat)](http://cocoapods.org/pods/Fuse)
 [![Platform](https://img.shields.io/cocoapods/p/Fuse.svg?style=flat)](http://cocoapods.org/pods/Fuse)
