@@ -1,11 +1,10 @@
 use_frameworks!
 
 target 'Fuse_Example' do
-  pod 'Fuse', :path => '../'
-
-  target 'Fuse_Tests' do
-    inherit! :search_paths
-
-    
-  end
+    pod 'Fuse', :path => '../'
 end
+
+target 'Fuse_Tests' do
+    pod 'Fuse', :path => '../'
+end
+
