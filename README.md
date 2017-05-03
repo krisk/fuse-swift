@@ -5,7 +5,7 @@
 [![License](https://img.shields.io/cocoapods/l/Fuse.svg?style=flat)](http://cocoapods.org/pods/Fuse)
 [![Platform](https://img.shields.io/cocoapods/p/Fuse.svg?style=flat)](http://cocoapods.org/pods/Fuse)
 
-# What is Fuse?
+## What is Fuse?
 
 Fuse is a super lightweight library which provides a simple way to do fuzzy searching.
 
