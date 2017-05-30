@@ -2,26 +2,6 @@ import UIKit
 import XCTest
 import Fuse
 
-class Book {
-    dynamic let author: String
-    dynamic let title: String
-    
-    public init (author: String, title: String) {
-        self.author = author
-        self.title = title
-    }
-}
-
-extension Book : Fuseable {
-    var properties: [FuseProperty] {
-        return [
-            FuseProperty(name: "title", weight: 0.3),
-            FuseProperty(name: "author", weight: 0.7),
-        ]
-    }
-}
-
-
 class Tests: XCTestCase {
     
     override func setUp() {
@@ -75,7 +55,55 @@ class Tests: XCTestCase {
         XCTAssert(results[1].index == 1, "The second result is the second book")
     }
     
-    func testProtocol() {
+    func testProtocolWeightedSearch1() {
+        class Book: Fuseable {
+            dynamic let author: String
+            dynamic let title: String
+            
+            public init (author: String, title: String) {
+                self.author = author
+                self.title = title
+            }
+            
+            var properties: [FuseProperty] {
+                return [
+                    FuseProperty(name: "title", weight: 0.7),
+                    FuseProperty(name: "author", weight: 0.3),
+                ]
+            }
+        }
+        
+        let books: [Book] = [
+            Book(author: "John X", title: "Old Man's War fiction"),
+            Book(author: "P.D. Mans", title: "Right Ho Jeeves")
+        ]
+        
+        let fuse = Fuse()
+        let results = fuse.search("man", in: books)
+        
+        XCTAssert(results.count > 0, "There are results")
+        XCTAssert(results[0].index == 0, "The first result is the first book")
+        XCTAssert(results[1].index == 1, "The second result is the second book")
+    }
+    
+    func testProtocolWeightedSearch2() {
+        class Book: Fuseable {
+            dynamic let author: String
+            dynamic let title: String
+            
+            public init (author: String, title: String) {
+                self.author = author
+                self.title = title
+            }
+            
+            var properties: [FuseProperty] {
+                return [
+                    FuseProperty(name: "title", weight: 0.3),
+                    FuseProperty(name: "author", weight: 0.7),
+                ]
+            }
+        }
+        
         let books: [Book] = [
             Book(author: "John X", title: "Old Man's War fiction"),
             Book(author: "P.D. Mans", title: "Right Ho Jeeves")
@@ -89,4 +117,20 @@ class Tests: XCTestCase {
         XCTAssert(results[1].index == 0, "The second result is the first book")
     }
     
+    func testPerformance() {
+        if let path = Bundle(for: type(of: self)).path(forResource: "books", ofType: "txt") {
+            do {
+                let data = try String(contentsOfFile: path, encoding: .utf8)
+                let books = data.components(separatedBy: .newlines)
+                let fuse = Fuse()
+                
+                self.measure {
+                    _ = fuse.search("Th tinsg", in: books)
+                }
+            } catch {
+                print(error)
+            }
+        }
+        
+    }
 }

@@ -135,8 +135,8 @@ public class Fuse {
                 return nil
             }()
             
-            if bestLocation != nil {
-                threshold = min(threshold, FuseUtilities.calculateScore(pattern.text, e: 0, x: location, loc: bestLocation!, distance: distance))
+            if let bestLocation = bestLocation {
+                threshold = min(threshold, FuseUtilities.calculateScore(pattern.text, e: 0, x: location, loc: bestLocation, distance: distance))
             }
         }
         
@@ -205,10 +205,14 @@ public class Fuse {
                         // Indeed it is
                         threshold = score
                         bestLocation = currentLocation
+
+                        guard let bestLocation = bestLocation else {
+                            break
+                        }
                         
-                        if bestLocation! > location {
+                        if bestLocation > location  {
                             // When passing `bestLocation`, don't exceed our current distance from the expected `location`.
-                            start = max(1, 2 * location - bestLocation!)
+                            start = max(1, 2 * location - bestLocation)
                         } else {
                             // Already passed `location`. No point in continuing.
                             break
@@ -316,17 +320,20 @@ extension Fuse {
             
             var propertyResults = [(key: String, score: Double, ranges: [CountableRange<Int>])]()
             
+            let object = item as AnyObject
+            
             item.properties.forEach { property in
                 let selector = Selector(property.name)
-                let object = item as AnyObject
                 
                 if !object.responds(to: selector) {
                     return
                 }
                 
-                let value = object.perform(selector).takeUnretainedValue()
+                guard let value = object.perform(selector).takeUnretainedValue() as? String else {
+                    return
+                }
                 
-                if let result = self.search(pattern, in: value as! String) {
+                if let result = self.search(pattern, in: value) {
                     let weight = property.weight == 1 ? 1 : 1 - property.weight
                     let score = result.score * weight
                     totalScore += score

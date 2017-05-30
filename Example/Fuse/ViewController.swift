@@ -148,6 +148,7 @@ class ViewController: UITableViewController {
 extension ViewController: UISearchBarDelegate {
     // MARK: - UISearchBar Delegate
     func searchBar(_ searchBar: UISearchBar, selectedScopeButtonIndexDidChange selectedScope: Int) {
+        // TODO: can run this on a background queue, and then reload the tableview back on the main queue
         filterContentForSearchText(searchBar.text!)
     }
 }
