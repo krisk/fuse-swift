@@ -4,6 +4,8 @@
 [![Version](https://img.shields.io/cocoapods/v/Fuse.svg?style=flat)](http://cocoapods.org/pods/Fuse)
 [![License](https://img.shields.io/cocoapods/l/Fuse.svg?style=flat)](http://cocoapods.org/pods/Fuse)
 [![Platform](https://img.shields.io/cocoapods/p/Fuse.svg?style=flat)](http://cocoapods.org/pods/Fuse)
+[![Donate](https://img.shields.io/badge/Donate-PayPal-red.svg)](https://www.paypal.me/kirorisk)
+[![Donate](https://img.shields.io/badge/patreon-donate-red.svg)](https://www.patreon.com/fusejs)
 
 ## What is Fuse?
 
@@ -64,7 +66,7 @@ let fuse = Fuse()
 let results = fuse.search("man", in: books)
 
 results.forEach { item in
-    print("index: " + item.index)   
+    print("index: " + item.index)
     print("score: " + item.score)
     print("results: " + item.results)
     print("---------------")
