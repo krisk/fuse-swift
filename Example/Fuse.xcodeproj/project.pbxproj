@@ -10,6 +10,7 @@
 		4844BD6B1EB943E7001795FB /* Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 607FACEB1AFB9204008FA782 /* Tests.swift */; };
 		48921A8A1EDDB274009C962E /* books.txt in Resources */ = {isa = PBXBuildFile; fileRef = 48921A891EDDB274009C962E /* books.txt */; };
 		48921A8B1EDDB274009C962E /* books.txt in Resources */ = {isa = PBXBuildFile; fileRef = 48921A891EDDB274009C962E /* books.txt */; };
+		48DBA63F1EE04382004EA80A /* CHANGELOG.md in Sources */ = {isa = PBXBuildFile; fileRef = 48DBA63E1EE04382004EA80A /* CHANGELOG.md */; };
 		607FACD61AFB9204008FA782 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 607FACD51AFB9204008FA782 /* AppDelegate.swift */; };
 		607FACD81AFB9204008FA782 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 607FACD71AFB9204008FA782 /* ViewController.swift */; };
 		607FACDB1AFB9204008FA782 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 607FACD91AFB9204008FA782 /* Main.storyboard */; };
@@ -33,6 +34,7 @@
 		18B8BF7FB99669010251081B /* README.md */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = net.daringfireball.markdown; name = README.md; path = ../README.md; sourceTree = "<group>"; };
 		24C0655B65E36704B5A61F1D /* Pods-Fuse_Tests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Fuse_Tests.release.xcconfig"; path = "Pods/Target Support Files/Pods-Fuse_Tests/Pods-Fuse_Tests.release.xcconfig"; sourceTree = "<group>"; };
 		48921A891EDDB274009C962E /* books.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = books.txt; sourceTree = "<group>"; };
+		48DBA63E1EE04382004EA80A /* CHANGELOG.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = CHANGELOG.md; sourceTree = "<group>"; };
 		607FACD01AFB9204008FA782 /* Fuse_Example.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Fuse_Example.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		607FACD41AFB9204008FA782 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		607FACD51AFB9204008FA782 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -150,6 +152,7 @@
 				F32F7457861B8DDBDD449A66 /* Fuse.podspec */,
 				18B8BF7FB99669010251081B /* README.md */,
 				80DCC2C583B59F5B7FB974F3 /* LICENSE */,
+				48DBA63E1EE04382004EA80A /* CHANGELOG.md */,
 			);
 			name = "Podspec Metadata";
 			sourceTree = "<group>";
@@ -368,6 +371,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				607FACD81AFB9204008FA782 /* ViewController.swift in Sources */,
+				48DBA63F1EE04382004EA80A /* CHANGELOG.md in Sources */,
 				607FACD61AFB9204008FA782 /* AppDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
