@@ -101,21 +101,19 @@ class ViewController: UITableViewController {
 
         let results = fuse.search(searchText, in: books)
 
-        filteredBooks = results
-            .sorted { $0.score < $1.score }
-            .map { (index, _, matchedRanges) in
-                let book = books[index]
+        filteredBooks = results.map { (index, _, matchedRanges) in
+            let book = books[index]
 
-                let attributedString = NSMutableAttributedString(string: book)
-                matchedRanges
-                    .map(Range.init)
-                    .map(NSRange.init)
-                    .forEach {
-                        attributedString.addAttributes(boldAttrs, range: $0)
-                    }
+            let attributedString = NSMutableAttributedString(string: book)
+            matchedRanges
+                .map(Range.init)
+                .map(NSRange.init)
+                .forEach {
+                    attributedString.addAttributes(boldAttrs, range: $0)
+                }
 
-                return attributedString
-            }
+            return attributedString
+        }
         
         tableView.reloadData()
     }
