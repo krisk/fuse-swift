@@ -119,12 +119,12 @@ class ViewController: UITableViewController {
                 $0.characters.enumerated().forEach { (offset, character) in
                     let str = String(character)
                     
-                    if offset > range.endIndex && index < ranges.count - 1 {
+                    if offset > range.upperBound && index < ranges.count - 1 {
                         index += 1
                         range = ranges[index]
                     }
                     
-                    if offset >= range.startIndex && offset <= range.endIndex {
+                    if offset >= range.lowerBound && offset <= range.upperBound {
                         attributedString.append(NSMutableAttributedString(string: str, attributes: boldAttrs))
                     } else {
                         attributedString.append(NSMutableAttributedString(string: str))

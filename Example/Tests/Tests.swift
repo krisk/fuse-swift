@@ -54,6 +54,16 @@ class Tests: XCTestCase {
         XCTAssert(results[0].index == 2, "The first result is the third book")
         XCTAssert(results[1].index == 1, "The second result is the second book")
     }
+
+    func testRange() {
+        let books = ["The Lock Artist", "The Lost Symbol", "The Silmarillion", "xyz", "fga"]
+
+        let fuse = Fuse()
+        let results = fuse.search("silm", in: books)
+
+        XCTAssert(results[0].ranges.count == 1, "There is a matching range in the first result")
+        XCTAssert(results[0].ranges[0] == ClosedRange(4...7), "The range goes over the matched substring")
+    }
     
     func testProtocolWeightedSearch1() {
         class Book: Fuseable {
