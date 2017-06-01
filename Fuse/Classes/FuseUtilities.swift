@@ -45,7 +45,7 @@ class FuseUtilities {
         return mask
     }
     
-    /// Returns an array of `CountableRange<Int>`, where each range represents a consecutive list of `1`s.
+    /// Returns an array of `CountableClosedRange<Int>`, where each range represents a consecutive list of `1`s.
     ///
     ///     let arr = [0, 1, 1, 0, 1, 1, 1 ]
     ///     let ranges = findRanges(arr)
@@ -53,22 +53,22 @@ class FuseUtilities {
     ///
     /// - Parameter mask: A string representing the value to search for.
     ///
-    /// - Returns: `Range<Int>` array.
+    /// - Returns: `CountableClosedRange<Int>` array.
     static func findRanges(_ mask: [Int]) -> [CountableClosedRange<Int>] {
         var ranges = [CountableClosedRange<Int>]()
-        var start: Int?
-        var end: Int?
+        var start: Int = -1
+        var end: Int = -1
         for (n, bit) in mask.enumerated() {
-            if bit == 1 && start == nil {
+            if bit == 1 && start == -1 {
                 start = n
-            } else if bit == 0 && start != nil {
+            } else if bit == 0 && start != -1 {
                 end = n - 1
-                ranges.append(CountableClosedRange<Int>(start!...end!))
-                start = nil
+                ranges.append(CountableClosedRange<Int>(start...end))
+                start = -1
             }
         }
         if mask.last == 1 {
-            ranges.append(CountableClosedRange<Int>(start!...mask.count - 1))
+            ranges.append(CountableClosedRange<Int>(start...mask.count - 1))
         }
         return ranges
     }

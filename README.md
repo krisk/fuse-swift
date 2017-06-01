@@ -22,7 +22,7 @@ let fuse = Fuse()
 let result = fuse.search("od mn war", in: "Old Man's War")
 
 print(result?.score)  // 0.44444444444444442
-print(result?.ranges) // [CountableRange(0..<0), CountableRange(2..<6), CountableRange(9..<12)]
+print(result?.ranges) // [CountableClosedRange(0...0), CountableClosedRange(2...6), CountableClosedRange(9...12)]
 ```
 
 #### Example 2
@@ -76,11 +76,11 @@ results.forEach { item in
 //
 // index: 1
 // score: 0.015
-// results: [(key: "author", score: 0.015000000000000003, ranges: [CountableRange(5..<7)])]
+// results: [(key: "author", score: 0.015000000000000003, ranges: [CountableClosedRange(5...7)])]
 // ---------------
 // index: 0
 // score: 0.028
-// results: [(key: "title", score: 0.027999999999999997, ranges: [CountableRange(4..<6)])]
+// results: [(key: "title", score: 0.027999999999999997, ranges: [CountableClosedRange(4...6)])]
 ```
 
 ### Options
