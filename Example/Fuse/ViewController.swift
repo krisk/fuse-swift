@@ -17,7 +17,7 @@ class ViewController: UITableViewController {
     
     // MARK: - Properties
     var books = [String]()
-    var filteredBooks = [NSMutableAttributedString]()
+    var filteredBooks = [NSAttributedString]()
     let fuse = Fuse()
     
     let searchController = UISearchController(searchResultsController: nil)
@@ -80,12 +80,12 @@ class ViewController: UITableViewController {
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
-        let item: NSMutableAttributedString
+        let item: NSAttributedString
         
         if searchController.isActive && searchController.searchBar.text != "" {
             item = filteredBooks[indexPath.row]
         } else {
-            item = NSMutableAttributedString(string: books[indexPath.row])
+            item = NSAttributedString(string: books[indexPath.row])
         }
         
         cell.textLabel!.attributedText = item
@@ -94,51 +94,28 @@ class ViewController: UITableViewController {
     }
     
     func filterContentForSearchText(_ searchText: String) {
-        let pattern = fuse.createPattern(from: searchText)
-        
-        typealias ItemTuple = (item: NSMutableAttributedString, score: Double)
-        var results = [ItemTuple]()
-        
         let boldAttrs = [
             NSFontAttributeName : UIFont.boldSystemFont(ofSize: 17),
             NSForegroundColorAttributeName: UIColor.blue
         ]
-        
-        books.forEach {
-            // Search for the pattern in the book
-            if let result = fuse.search(pattern, in: $0) {
-                
-                // if a result is found, do some text transformation so that
-                // the substrings that are matched are bolded in the UI
-                let ranges = result.ranges
-                
-                let attributedString = NSMutableAttributedString(string:"")
-                var index: Int = 0
-                var range = ranges[index]
-                
-                $0.characters.enumerated().forEach { (offset, character) in
-                    let str = String(character)
-                    
-                    if offset > range.upperBound && index < ranges.count - 1 {
-                        index += 1
-                        range = ranges[index]
+
+        let results = fuse.search(searchText, in: books)
+
+        filteredBooks = results
+            .sorted { $0.score < $1.score }
+            .map { (index, _, matchedRanges) in
+                let book = books[index]
+
+                let attributedString = NSMutableAttributedString(string: book)
+                matchedRanges
+                    .map(Range.init)
+                    .map(NSRange.init)
+                    .forEach {
+                        attributedString.addAttributes(boldAttrs, range: $0)
                     }
-                    
-                    if offset >= range.lowerBound && offset <= range.upperBound {
-                        attributedString.append(NSMutableAttributedString(string: str, attributes: boldAttrs))
-                    } else {
-                        attributedString.append(NSMutableAttributedString(string: str))
-                    }
-                }
-                
-                results.append((item: attributedString, score: result.score))
+
+                return attributedString
             }
-        }
-        
-        filteredBooks = [NSMutableAttributedString]()
-        
-        // Sort the results by the score, and then add them into `filteredBooks`
-        results.sorted { return $0.score < $1.score }.forEach { filteredBooks.append($0.item) }
         
         tableView.reloadData()
     }
