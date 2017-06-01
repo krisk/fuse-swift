@@ -41,7 +41,7 @@ public class Fuse {
         results: [(
             key: String,
             score: Double,
-            ranges: [ClosedRange<Int>]
+            ranges: [CountableClosedRange<Int>]
         )]
     )
     
@@ -91,7 +91,7 @@ public class Fuse {
     ///   - pattern: The pattern to search for. This is created by calling `createPattern`
     ///   - aString: The string in which to search for the pattern
     /// - Returns: A tuple containing a `score` between `0.0` (exact match) and `1` (not a match), and `ranges` of the matched characters.
-    public func search(_ pattern: Pattern?, in aString: String) -> (score: Double, ranges: [ClosedRange<Int>])? {
+    public func search(_ pattern: Pattern?, in aString: String) -> (score: Double, ranges: [CountableClosedRange<Int>])? {
         guard let pattern = pattern else {
             return nil
         }
@@ -106,7 +106,7 @@ public class Fuse {
         
         // Exact match
         if (pattern.text == text) {
-            return (0, [ClosedRange<Int>(0...textLength - 1)])
+            return (0, [CountableClosedRange<Int>(0...textLength - 1)])
         }
         
         let location = self.location
@@ -251,7 +251,7 @@ extension Fuse {
     ///   - text: the text string to search for.
     ///   - aString: The string in which to search for the pattern
     /// - Returns: A tuple containing a `score` between `0.0` (exact match) and `1` (not a match), and `ranges` of the matched characters.
-    public func search(_ text: String, in aString: String) -> (score: Double, ranges: [ClosedRange<Int>])? {
+    public func search(_ text: String, in aString: String) -> (score: Double, ranges: [CountableClosedRange<Int>])? {
         return self.search(self.createPattern(from: text), in: aString)
     }
     
@@ -261,10 +261,10 @@ extension Fuse {
     ///   - text: The pattern string to search for
     ///   - aList: The list of string in which to search
     /// - Returns: A tuple containing the `item` in which the match is found, the `score`, and the `ranges` of the matched characters
-    public func search(_ text: String, in aList: [String]) -> [(index: Int, score: Double, ranges: [ClosedRange<Int>])] {
+    public func search(_ text: String, in aList: [String]) -> [(index: Int, score: Double, ranges: [CountableClosedRange<Int>])] {
         let pattern = self.createPattern(from: text)
         
-        var items = [(index: Int, score: Double, ranges: [ClosedRange<Int>])]()
+        var items = [(index: Int, score: Double, ranges: [CountableClosedRange<Int>])]()
         
         for (index, item) in aList.enumerated() {
             if let result = self.search(pattern, in: item) {
@@ -318,7 +318,7 @@ extension Fuse {
             var scores = [Double]()
             var totalScore = 0.0
             
-            var propertyResults = [(key: String, score: Double, ranges: [ClosedRange<Int>])]()
+            var propertyResults = [(key: String, score: Double, ranges: [CountableClosedRange<Int>])]()
             
             let object = item as AnyObject
             
