@@ -35,7 +35,9 @@ public class Fuse {
     
     public typealias Pattern = (text: String, len: Int, mask: Int, alphabet: [Character: Int])
     
-    public typealias CollectionResult = (
+    public typealias SearchResult = (index: Int, score: Double, ranges: [CountableClosedRange<Int>])
+    
+    public typealias FusableSearchResult = (
         index: Int,
         score: Double,
         results: [(
@@ -44,6 +46,11 @@ public class Fuse {
             ranges: [CountableClosedRange<Int>]
         )]
     )
+    
+    fileprivate lazy var searchQueue: DispatchQueue = { [unowned self] in
+        let label = "fuse.search.queue"
+        return DispatchQueue(label: label, attributes: .concurrent)
+        }()
     
     /// Creates a new instance of `Fuse`
     ///
@@ -239,7 +246,7 @@ extension Fuse {
     ///     let fuse = Fuse()
     ///     fuse.search("some text", in: "some string")
     ///
-    /// **Note**: if the same text needs to be searched across many strings, consider creating the pattern once via `createPattern`, and then use the other `search` function. This will improve performance, as the the pattern object would only be created once, and re-used across every search call:
+    /// **Note**: if the same text needs to be searched across many strings, consider creating the pattern once via `createPattern`, and then use the other `search` function. This will improve performance, as the pattern object would only be created once, and re-used across every search call:
     ///
     ///     let fuse = Fuse()
     ///     let pattern = fuse.createPattern(from: "some text")
@@ -261,10 +268,10 @@ extension Fuse {
     ///   - text: The pattern string to search for
     ///   - aList: The list of string in which to search
     /// - Returns: A tuple containing the `item` in which the match is found, the `score`, and the `ranges` of the matched characters
-    public func search(_ text: String, in aList: [String]) -> [(index: Int, score: Double, ranges: [CountableClosedRange<Int>])] {
+    public func search(_ text: String, in aList: [String]) -> [SearchResult] {
         let pattern = self.createPattern(from: text)
         
-        var items = [(index: Int, score: Double, ranges: [CountableClosedRange<Int>])]()
+        var items = [SearchResult]()
         
         for (index, item) in aList.enumerated() {
             if let result = self.search(pattern, in: item) {
@@ -273,6 +280,43 @@ extension Fuse {
         }
         
         return items.sorted { $0.score < $1.score }
+    }
+    
+    /// Asynchronously searches for a text pattern in an array of srings.
+    ///
+    /// - Parameters:
+    ///   - text: The pattern string to search for
+    ///   - aList: The list of string in which to search
+    ///   - chunkSize: The size of a single chunk of the array. For example, if the array has `1000` items, it may be useful to split the work into 10 chunks of 100. This should ideally speed up the search logic. Defaults to `100`.
+    ///   - completion: The handler which is executed upon completion
+    public func search(_ text: String, in aList: [String], chunkSize: Int = 100, completion: @escaping ([SearchResult]) -> Void) {
+        let pattern = self.createPattern(from: text)
+        
+        var items = [SearchResult]()
+        
+        let group = DispatchGroup()
+        let count = aList.count
+        
+        stride(from: 0, to: count, by: chunkSize).forEach {
+            let chunk = Array(aList[$0..<min($0 + chunkSize, count)])
+            group.enter()
+            self.searchQueue.async {
+                for (index, item) in chunk.enumerated() {
+                    if let result = self.search(pattern, in: item) {
+                        items.append((index, result.score, result.ranges))
+                    }
+                }
+                
+                group.leave()
+            }
+        }
+    
+        group.notify(queue: self.searchQueue) {
+            let sorted = items.sorted { $0.score < $1.score }
+            DispatchQueue.main.async {
+                completion(sorted)
+            }
+        }
     }
     
     /// Searches for a text pattern in an array of `Fuseable` objects.
@@ -309,10 +353,10 @@ extension Fuse {
     ///   - text: The pattern string to search for
     ///   - aList: The list of `Fuseable` objects in which to search
     /// - Returns: A list of `CollectionResult` objects
-    public func search(_ text: String, in aList: [Fuseable]) -> [CollectionResult] {
+    public func search(_ text: String, in aList: [Fuseable]) -> [FusableSearchResult] {
         let pattern = self.createPattern(from: text)
         
-        var collectionResult = [CollectionResult]()
+        var collectionResult = [FusableSearchResult]()
         
         for (index, item) in aList.enumerated() {
             var scores = [Double]()
@@ -357,5 +401,107 @@ extension Fuse {
         }
         
         return collectionResult.sorted { $0.score < $1.score }
+    }
+    
+    /// Asynchronously searches for a text pattern in an array of `Fuseable` objects.
+    ///
+    /// Each `FuseSearchable` object contains a `properties` accessor which returns `FuseProperty` array. Each `FuseProperty` is a tuple containing a `key` (the name of the property whose values should be included in the search), and a `weight` (how much "weight" to assign to the score)
+    ///
+    /// ## Example
+    ///
+    /// Ensure the object conforms to `Fuseable`. The properties that are searchable need the `dynamic var` attribute in order for these properties to become accessible via reflection:
+    ///
+    ///     class Book: Fuseable {
+    ///         dynamic var name: String
+    ///         dynamic var author: String
+    ///
+    ///         var properties: [FuseProperty] {
+    ///             return [
+    ///                 FuseProperty(name: "title", weight: 0.3),
+    ///                 FuseProperty(name: "author", weight: 0.7),
+    ///             ]
+    ///         }
+    ///     }
+    ///
+    /// Searching is straightforward:
+    ///
+    ///     let books: [Book] = [
+    ///         Book(author: "John X", title: "Old Man's War fiction"),
+    ///         Book(author: "P.D. Mans", title: "Right Ho Jeeves")
+    ///     ]
+    ///
+    ///     let fuse = Fuse()
+    ///     fuse.search("Man", in: books, completion: { results in
+    ///         print(results)
+    ///     })
+    ///
+    /// - Parameters:
+    ///   - text: The pattern string to search for
+    ///   - aList: The list of `Fuseable` objects in which to search
+    ///   - chunkSize: The size of a single chunk of the array. For example, if the array has `1000` items, it may be useful to split the work into 10 chunks of 100. This should ideally speed up the search logic. Defaults to `100`.
+    ///   - completion: The handler which is executed upon completion
+    public func search(_ text: String, in aList: [Fuseable], chunkSize: Int = 100, completion: @escaping ([FusableSearchResult]) -> Void) {
+        let pattern = self.createPattern(from: text)
+        
+        let group = DispatchGroup()
+        let count = aList.count
+        
+        var collectionResult = [FusableSearchResult]()
+        
+        stride(from: 0, to: count, by: chunkSize).forEach {
+            let chunk = Array(aList[$0..<min($0 + chunkSize, count)])
+            group.enter()
+            self.searchQueue.async {
+                for (index, item) in chunk.enumerated() {
+                    var scores = [Double]()
+                    var totalScore = 0.0
+                    
+                    var propertyResults = [(key: String, score: Double, ranges: [CountableClosedRange<Int>])]()
+                    
+                    let object = item as AnyObject
+                    
+                    item.properties.forEach { property in
+                        let selector = Selector(property.name)
+                        
+                        if !object.responds(to: selector) {
+                            return
+                        }
+                        
+                        guard let value = object.perform(selector).takeUnretainedValue() as? String else {
+                            return
+                        }
+                        
+                        if let result = self.search(pattern, in: value) {
+                            let weight = property.weight == 1 ? 1 : 1 - property.weight
+                            let score = result.score * weight
+                            totalScore += score
+                            
+                            scores.append(score)
+                            
+                            propertyResults.append((key: property.name, score: score, ranges: result.ranges))
+                        }
+                    }
+                    
+                    if scores.count == 0 {
+                        continue
+                    }
+                    
+                    collectionResult.append((
+                        index: index,
+                        score: totalScore / Double(scores.count),
+                        results: propertyResults
+                    ))
+                }
+                
+                group.leave()
+            }
+        }
+        
+        group.notify(queue: self.searchQueue) {
+            let sorted = collectionResult.sorted { $0.score < $1.score }
+            DispatchQueue.main.async {
+                completion(sorted)
+            }
+        }
     }
 }

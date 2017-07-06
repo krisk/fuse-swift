@@ -127,7 +127,7 @@ class Tests: XCTestCase {
         XCTAssert(results[1].index == 0, "The second result is the first book")
     }
     
-    func testPerformance() {
+    func testPerformanceSync() {
         if let path = Bundle(for: type(of: self)).path(forResource: "books", ofType: "txt") {
             do {
                 let data = try String(contentsOfFile: path, encoding: .utf8)
@@ -141,6 +141,25 @@ class Tests: XCTestCase {
                 print(error)
             }
         }
-        
+    }
+    
+    func testPerformanceAsync() {
+        if let path = Bundle(for: type(of: self)).path(forResource: "books", ofType: "txt") {
+            do {
+                let data = try String(contentsOfFile: path, encoding: .utf8)
+                let books = data.components(separatedBy: .newlines)
+                let fuse = Fuse()
+                
+                self.measure {
+                    let expect = self.expectation(description: "searching")
+                    fuse.search("Th tinsg", in: books, completion: { results in
+                        expect.fulfill()
+                    })
+                    self.wait(for: [expect], timeout: 20000000)
+                }
+            } catch {
+                print(error)
+            }
+        }
     }
 }
