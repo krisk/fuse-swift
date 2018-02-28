@@ -162,4 +162,11 @@ class Tests: XCTestCase {
             }
         }
     }
+    
+    func testItHandlesLongInputs() {
+        let threeHundredCharacters = String(repeating: "abc", count: 100)
+        let fuse = Fuse()
+        _ = fuse.search(threeHundredCharacters, in: "placeholder")
+        XCTAssertTrue(true, "Always pass when reaching here -- expected no exceptions from the long input")
+    }
 }
