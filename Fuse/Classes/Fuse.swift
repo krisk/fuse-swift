@@ -74,7 +74,7 @@ public class Fuse {
     /// - Returns: A tuple containing pattern metadata
     public func createPattern (from aString: String) -> Pattern? {
         let pattern = self.isCaseSensitive ? aString : aString.lowercased()
-        let len = pattern.count
+        let len = min(pattern.count, maxPatternLength)
         
         if len == 0 {
             return nil
