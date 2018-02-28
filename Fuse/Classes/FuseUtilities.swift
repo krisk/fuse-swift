@@ -19,7 +19,7 @@ class FuseUtilities {
     /// - Parameter scoreTextLength: Coerced version of text's length.
     /// - Returns: Overall score for match (0.0 = good, 1.0 = bad).
     static func calculateScore(_ pattern: String, e: Int, x: Int, loc: Int, distance: Int) -> Double {
-        let len = pattern.characters.count
+        let len = pattern.count
         let accuracy = Double(e) / Double(len)
         let proximity = abs(x - loc)
         if (distance == 0) {
@@ -33,13 +33,13 @@ class FuseUtilities {
     /// - Parameter pattern: The text to encode.
     /// - Returns: Hash of character locations.
     static func calculatePatternAlphabet(_ pattern: String) -> [Character: Int] {
-        let len = pattern.characters.count
+        let len = pattern.count
         var mask = [Character: Int]()
-        for char in pattern.characters {
+        for char in pattern {
             mask[char] = 0
         }
         for i in 0...len-1 {
-            let c = pattern[pattern.characters.index(pattern.startIndex, offsetBy: i)]
+            let c = pattern[pattern.index(pattern.startIndex, offsetBy: i)]
             mask[c] =  mask[c]! | (1 << (len - i - 1))
         }
         return mask
