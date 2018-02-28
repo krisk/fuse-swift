@@ -67,8 +67,8 @@ class Tests: XCTestCase {
     
     func testProtocolWeightedSearch1() {
         class Book: Fuseable {
-            dynamic let author: String
-            dynamic let title: String
+            @objc dynamic let author: String
+            @objc dynamic let title: String
             
             public init (author: String, title: String) {
                 self.author = author
@@ -98,8 +98,8 @@ class Tests: XCTestCase {
     
     func testProtocolWeightedSearch2() {
         class Book: Fuseable {
-            dynamic let author: String
-            dynamic let title: String
+            @objc dynamic let author: String
+            @objc dynamic let title: String
             
             public init (author: String, title: String) {
                 self.author = author
@@ -161,5 +161,12 @@ class Tests: XCTestCase {
                 print(error)
             }
         }
+    }
+    
+    func testItHandlesLongInputs() {
+        let threeHundredCharacters = String(repeating: "abc", count: 100)
+        let fuse = Fuse()
+        _ = fuse.search(threeHundredCharacters, in: "placeholder")
+        XCTAssertTrue(true, "Always pass when reaching here -- expected no exceptions from the long input")
     }
 }
