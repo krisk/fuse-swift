@@ -74,7 +74,7 @@ public class Fuse {
     /// - Returns: A tuple containing pattern metadata
     public func createPattern (from aString: String) -> Pattern? {
         let pattern = self.isCaseSensitive ? aString : aString.lowercased()
-        let len = pattern.characters.count
+        let len = pattern.count
         
         if len == 0 {
             return nil
@@ -109,7 +109,7 @@ public class Fuse {
             text = text.lowercased()
         }
         
-        let textLength = text.characters.count
+        let textLength = text.count
         
         // Exact match
         if (pattern.text == text) {
@@ -122,7 +122,7 @@ public class Fuse {
         
         var bestLocation: Int? = {
             if let index = text.index(of: pattern.text, startingFrom: location) {
-                return text.characters.distance(from: text.startIndex, to: index)
+                return text.distance(from: text.startIndex, to: index)
             }
             return nil
         }()
@@ -137,7 +137,7 @@ public class Fuse {
             // What about in the other direction? (speed up)
             bestLocation = {
                 if let index = text.lastIndexOf(pattern.text, position: location + pattern.len) {
-                    return text.characters.distance(from: text.startIndex, to: index)
+                    return text.distance(from: text.startIndex, to: index)
                 }
                 return nil
             }()
