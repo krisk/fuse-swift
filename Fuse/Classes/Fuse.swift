@@ -293,6 +293,7 @@ extension Fuse {
         let pattern = self.createPattern(from: text)
         
         var items = [SearchResult]()
+        let itemsLock = NSLock()
         
         let group = DispatchGroup()
         let count = aList.count
@@ -303,7 +304,9 @@ extension Fuse {
             self.searchQueue.async {
                 for (index, item) in chunk.enumerated() {
                     if let result = self.search(pattern, in: item) {
+                        itemsLock.lock()
                         items.append((index, result.score, result.ranges))
+                        itemsLock.unlock()
                     }
                 }
                 
@@ -447,6 +450,7 @@ extension Fuse {
         let count = aList.count
         
         var collectionResult = [FusableSearchResult]()
+        let resultLock = NSLock()
         
         stride(from: 0, to: count, by: chunkSize).forEach {
             let chunk = Array(aList[$0..<min($0 + chunkSize, count)])
@@ -486,11 +490,13 @@ extension Fuse {
                         continue
                     }
                     
+                    resultLock.lock()
                     collectionResult.append((
                         index: index,
                         score: totalScore / Double(scores.count),
                         results: propertyResults
                     ))
+                    resultLock.unlock()
                 }
                 
                 group.leave()
