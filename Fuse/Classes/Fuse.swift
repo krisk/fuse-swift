@@ -178,7 +178,7 @@ public class Fuse {
             var bitArr = [Int](repeating: 0, count: finish + 2)
             bitArr[finish + 1] = (1 << i) - 1
             
-            if start >= finish {
+            if start > finish {
                 continue
             }
 
