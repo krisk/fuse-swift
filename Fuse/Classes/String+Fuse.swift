@@ -31,7 +31,7 @@ extension String {
             return nil
         }
         
-        if self.startIndex.encodedOffset + position > self.count {
+        if self.startIndex.encodedOffset + position > self.endIndex.encodedOffset {
             return nil
         }
         
