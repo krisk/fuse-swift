@@ -27,7 +27,15 @@ extension String {
     ///
     ///  - Returns: The index within the calling String object of the first occurrence of `searchStr`, starting the search at `position`. Returns `nil` if the value is not found.
     func index(of aString: String, startingFrom position: Int? = 0) -> String.Index? {
-        let start: String.Index = self.index(self.startIndex, offsetBy: position!)
+        guard let position = position else {
+            return nil
+        }
+        
+        if self.startIndex.encodedOffset + position > self.count {
+            return nil
+        }
+        
+        let start: String.Index = self.index(self.startIndex, offsetBy: position)
         let range: Range<Index> = Range<Index>.init(uncheckedBounds: (lower: start, upper: self.endIndex))
         return self.range(of: aString, options: .literal, range: range, locale: nil)?.lowerBound
     }
@@ -39,8 +47,12 @@ extension String {
     ///
     /// - Returns: The index of last occurrence of `searchStr`, searching backwards from `position`. Returns `nil` if the value is not found.
     func lastIndexOf(_ searchStr: String, position: Int? = 0) -> String.Index? {
+        guard let position = position else {
+            return nil
+        }
+        
         let len = self.count
-        let start = min(max(position!, 0), len)
+        let start = min(max(position, 0), len)
         let searchLen = searchStr.count
         let r: Range<Index> = Range<Index>.init(uncheckedBounds: (lower: self.startIndex, upper: self.index(self.startIndex, offsetBy: min(start + searchLen, len))))
         if let range = self.range(of: searchStr, options: [.backwards, .literal], range: r) {
