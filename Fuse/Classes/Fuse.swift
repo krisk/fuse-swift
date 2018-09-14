@@ -383,7 +383,7 @@ extension Fuse {
                 
                 if let result = self.search(pattern, in: value) {
                     let weight = property.weight == 1 ? 1 : 1 - property.weight
-                    let score = result.score * weight
+                    let score = (result.score == 0 && weight == 1 ? 0.001 : result.score) * weight
                     totalScore += score
                     
                     scores.append(score)
