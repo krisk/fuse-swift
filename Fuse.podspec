@@ -13,6 +13,7 @@ Pod::Spec.new do |s|
   s.social_media_url = 'https://twitter.com/kirorisk'
 
   s.ios.deployment_target = '8.0'
+  s.osx.deployment_target = '10.13'
   s.source_files = 'Fuse/Classes/**/*'
   s.swift_version = '4.1.2'
 end
