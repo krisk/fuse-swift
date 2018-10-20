@@ -95,8 +95,8 @@ class ViewController: UITableViewController {
     
     func filterContentForSearchText(_ searchText: String) {
         let boldAttrs = [
-            NSFontAttributeName : UIFont.boldSystemFont(ofSize: 17),
-            NSForegroundColorAttributeName: UIColor.blue
+            NSAttributedStringKey.font : UIFont.boldSystemFont(ofSize: 17),
+            NSAttributedStringKey.foregroundColor: UIColor.blue
         ]
 
         let results = fuse.search(searchText, in: books)

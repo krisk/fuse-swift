@@ -67,8 +67,8 @@ class Tests: XCTestCase {
     
     func testProtocolWeightedSearch1() {
         class Book: Fuseable {
-            dynamic let author: String
-            dynamic let title: String
+            @objc dynamic let author: String
+            @objc dynamic let title: String
             
             public init (author: String, title: String) {
                 self.author = author
@@ -98,8 +98,8 @@ class Tests: XCTestCase {
     
     func testProtocolWeightedSearch2() {
         class Book: Fuseable {
-            dynamic let author: String
-            dynamic let title: String
+            @objc dynamic let author: String
+            @objc dynamic let title: String
             
             public init (author: String, title: String) {
                 self.author = author
