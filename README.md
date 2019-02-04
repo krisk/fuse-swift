@@ -29,8 +29,6 @@ print(result?.ranges) // [CountableClosedRange(0...0), CountableClosedRange(2...
 
 #### Searching in an array of strings
 
-##### Synchronous
-
 [Reference](Fuse/Classes/Fuse.swift#L275)
 
 ```swift
@@ -46,7 +44,7 @@ results.forEach { item in
 }
 ```
 
-##### Asynchronous
+##### Asynchronous version
 
 [Reference](Fuse/Classes/Fuse.swift#L296)
 
@@ -81,13 +79,6 @@ let books: [Book] = [
     Book(author: "John X", title: "Old Man's War fiction"),
     Book(author: "P.D. Mans", title: "Right Ho Jeeves")
 ]
-```
-
-##### Synchronous
-
-[Reference](Fuse/Classes/Fuse.swift#L360)
-
-```swift
 let fuse = Fuse()
 let results = fuse.search("man", in: books)
 
@@ -109,7 +100,7 @@ results.forEach { item in
 // results: [(key: "title", score: 0.027999999999999997, ranges: [CountableClosedRange(4...6)])]
 ```
 
-##### Asynchronous
+##### Asynchronous version
 
 [Reference](Fuse/Classes/Fuse.swift#L447)
 
