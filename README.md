@@ -113,16 +113,6 @@ fuse.search("Man", in: books, completion: { results in
         print("---------------")
     }
 })
-
-// Output:
-//
-// index: 1
-// score: 0.015
-// results: [(key: "author", score: 0.015000000000000003, ranges: [CountableClosedRange(5...7)])]
-// ---------------
-// index: 0
-// score: 0.028
-// results: [(key: "title", score: 0.027999999999999997, ranges: [CountableClosedRange(4...6)])]
 ```
 
 ### Options
