@@ -417,19 +417,10 @@ extension Fuse {
             var totalScore = 0.0
             
             var propertyResults = [(key: String, score: Double, ranges: [CountableClosedRange<Int>])]()
-            
-            let object = item as AnyObject
-            
+
             item.properties.forEach { property in
-                let selector = Selector(property.name)
-                
-                if !object.responds(to: selector) {
-                    return
-                }
-                
-                guard let value = object.perform(selector).takeUnretainedValue() as? String else {
-                    return
-                }
+
+                let value = property.name
                 
                 if let result = self.search(pattern, in: value) {
                     let weight = property.weight == 1 ? 1 : 1 - property.weight
@@ -511,19 +502,10 @@ extension Fuse {
                     var totalScore = 0.0
                     
                     var propertyResults = [(key: String, score: Double, ranges: [CountableClosedRange<Int>])]()
-                    
-                    let object = item as AnyObject
-                    
+
                     item.properties.forEach { property in
-                        let selector = Selector(property.name)
-                        
-                        if !object.responds(to: selector) {
-                            return
-                        }
-                        
-                        guard let value = object.perform(selector).takeUnretainedValue() as? String else {
-                            return
-                        }
+
+                        let value = property.name
                         
                         if let result = self.search(pattern, in: value) {
                             let weight = property.weight == 1 ? 1 : 1 - property.weight
