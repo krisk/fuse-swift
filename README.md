@@ -133,12 +133,11 @@ To run the example project, clone the repo, and run `pod install` from the Examp
 
 ## Installation
 
-Fuse is available through [CocoaPods](http://cocoapods.org). To install
-it, simply add the following line to your Podfile:
+1. Add a dependency on Fuse:
+- CocoaPods: add `pod 'Fuse'` to your `Podfile`. 
+- Carthage: add `github "krisk/fuse-swift"` to your `Cartfile`.
 
-```ruby
-pod "Fuse"
-```
+2. Add `import Fuse` to your source files.
 
 ## License
 
