@@ -375,20 +375,20 @@ extension Fuse {
     
     /// Searches for a text pattern in an array of `Fuseable` objects.
     ///
-    /// Each `FuseSearchable` object contains a `properties` accessor which returns `FuseProperty` array. Each `FuseProperty` is a tuple containing a `key` (the name of the property whose values should be included in the search), and a `weight` (how much "weight" to assign to the score)
+    /// Each `FuseSearchable` object contains a `properties` accessor which returns `FuseProperty` array. Each `FuseProperty` is a tuple containing a `key` (the value of the property which should be included in the search), and a `weight` (how much "weight" to assign to the score)
     ///
     /// ## Example
     ///
-    /// Ensure the object conforms to `Fuseable`. The properties that are searchable need the `dynamic var` attribute in order for these properties to become accessible via reflection:
+    /// Ensure the object conforms to `Fuseable`:
     ///
-    ///     class Book: Fuseable {
-    ///         dynamic var name: String
-    ///         dynamic var author: String
+    ///     struct Book: Fuseable {
+    ///         let title: String
+    ///         let author: String
     ///
     ///         var properties: [FuseProperty] {
     ///             return [
-    ///                 FuseProperty(name: "title", weight: 0.3),
-    ///                 FuseProperty(name: "author", weight: 0.7),
+    ///                 FuseProperty(name: title, weight: 0.3),
+    ///                 FuseProperty(name: author, weight: 0.7),
     ///             ]
     ///         }
     ///     }
@@ -450,20 +450,20 @@ extension Fuse {
     
     /// Asynchronously searches for a text pattern in an array of `Fuseable` objects.
     ///
-    /// Each `FuseSearchable` object contains a `properties` accessor which returns `FuseProperty` array. Each `FuseProperty` is a tuple containing a `key` (the name of the property whose values should be included in the search), and a `weight` (how much "weight" to assign to the score)
+    /// Each `FuseSearchable` object contains a `properties` accessor which returns `FuseProperty` array. Each `FuseProperty` is a tuple containing a `key` (the value of the property which should be included in the search), and a `weight` (how much "weight" to assign to the score)
     ///
     /// ## Example
     ///
-    /// Ensure the object conforms to `Fuseable`. The properties that are searchable need the `dynamic var` attribute in order for these properties to become accessible via reflection:
+    /// Ensure the object conforms to `Fuseable`:
     ///
-    ///     class Book: Fuseable {
-    ///         dynamic var name: String
-    ///         dynamic var author: String
+    ///     struct Book: Fuseable {
+    ///         let title: String
+    ///         let author: String
     ///
     ///         var properties: [FuseProperty] {
     ///             return [
-    ///                 FuseProperty(name: "title", weight: 0.3),
-    ///                 FuseProperty(name: "author", weight: 0.7),
+    ///                 FuseProperty(name: title, weight: 0.3),
+    ///                 FuseProperty(name: author, weight: 0.7),
     ///             ]
     ///         }
     ///     }
