@@ -371,13 +371,7 @@ extension Fuse {
             let object = item as AnyObject
             
             item.properties.forEach { property in
-                let selector = Selector(property.name)
-                
-                if !object.responds(to: selector) {
-                    return
-                }
-                
-                guard let value = object.perform(selector).takeUnretainedValue() as? String else {
+                guard let value = safeValue(forKey: property.name, from: object) as? String else {
                     return
                 }
                 

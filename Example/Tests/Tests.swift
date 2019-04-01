@@ -162,4 +162,34 @@ class Tests: XCTestCase {
             }
         }
     }
+
+    func testOptionalProperties() {
+        class Book: Fuseable {
+            @objc dynamic let author: String
+            @objc dynamic let title: String?
+
+            public init (author: String, title: String?) {
+                self.author = author
+                self.title = title
+            }
+
+            var properties: [FuseProperty] {
+                return [
+                    FuseProperty(name: "title", weight: 0.3),
+                    FuseProperty(name: "author", weight: 0.7),
+                ]
+            }
+        }
+
+        let books: [Book] = [
+            Book(author: "John X", title: nil),
+            Book(author: "P.D. Mans", title: nil)
+        ]
+
+        let fuse = Fuse()
+        let results = fuse.search("man", in: books)
+
+        XCTAssert(results.count > 0, "There are results")
+        XCTAssert(results[0].index == 1, "The first result is the second book")
+    }
 }
