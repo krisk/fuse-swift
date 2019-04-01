@@ -30,8 +30,8 @@ extension String {
         guard let position = position else {
             return nil
         }
-        
-        if self.startIndex.encodedOffset + position > self.endIndex.encodedOffset {
+
+        if self.startIndex.utf16Offset(in: self) + position > self.endIndex.utf16Offset(in: self) {
             return nil
         }
         
