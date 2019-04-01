@@ -1,5 +1,5 @@
 PODS:
-  - Fuse (0.2.0)
+  - Fuse (1.2.2)
 
 DEPENDENCIES:
   - Fuse (from `../`)
@@ -9,8 +9,8 @@ EXTERNAL SOURCES:
     :path: "../"
 
 SPEC CHECKSUMS:
-  Fuse: 7ed32f81c57006ade4221cf8d74ebf2b0d98df89
+  Fuse: 0008773815b0a78e7a536a8ac8d96d780796988c
 
 PODFILE CHECKSUM: c8375e5aa0cd9dce10b0f856724ebce2798b66d3
 
-COCOAPODS: 1.2.1
+COCOAPODS: 1.7.0.beta.2

@@ -1,6 +1,6 @@
 {
   "name": "Fuse",
-  "version": "0.2.0",
+  "version": "1.2.2",
   "summary": "Fuzzy searching.",
   "description": "A lightweight fuzzy-search library, with zero dependencies",
   "homepage": "https://github.com/krisk/fuse-swift",
@@ -13,11 +13,13 @@
   },
   "source": {
     "git": "https://github.com/krisk/fuse-swift.git",
-    "tag": "0.2.0"
+    "tag": "1.2.2"
   },
   "social_media_url": "https://twitter.com/kirorisk",
   "platforms": {
-    "ios": "8.0"
+    "ios": "8.0",
+    "osx": "10.13"
   },
-  "source_files": "Fuse/Classes/**/*"
+  "source_files": "Fuse/Classes/**/*",
+  "swift_versions": "5.0"
 }
