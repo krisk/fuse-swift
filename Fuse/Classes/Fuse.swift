@@ -98,7 +98,7 @@ public class Fuse {
     ///   - pattern: The pattern to search for. This is created by calling `createPattern`
     ///   - aString: The string in which to search for the pattern
     /// - Returns: A tuple containing a `score` between `0.0` (exact match) and `1` (not a match), and `ranges` of the matched characters.
-    public func search(_ pattern: Pattern?, in aString: String) -> (score: Double, ranges: [CountableClosedRange<Int>])? {
+    public func search(_ pattern: Pattern?, in aString: String) -> (score: Double, ranges: [ClosedRange<Int>])? {
         guard let pattern = pattern else {
             return nil
         }
@@ -113,7 +113,7 @@ public class Fuse {
         
         // Exact match
         if (pattern.text == text) {
-            return (0, [CountableClosedRange<Int>(0...textLength - 1)])
+            return (0, [0...textLength - 1])
         }
         
         let location = self.location
