@@ -32,6 +32,7 @@ public class Fuse {
     private var threshold: Double
     private var maxPatternLength: Int
     private var isCaseSensitive: Bool
+    private var tokenize: Bool
     
     public typealias Pattern = (text: String, len: Int, mask: Int, alphabet: [Character: Int])
     
@@ -60,12 +61,14 @@ public class Fuse {
     ///   - threshold: At what point does the match algorithm give up. A threshold of `0.0` requires a perfect match (of both letters and location), a threshold of `1.0` would match anything. Defaults to `0.6`
     ///   - maxPatternLength: The maximum valid pattern length. The longer the pattern, the more intensive the search operation will be. If the pattern exceeds the `maxPatternLength`, the `search` operation will return `nil`. Why is this important? [Read this](https://en.wikipedia.org/wiki/Word_(computer_architecture)#Word_size_choice). Defaults to `32`
     ///   - isCaseSensitive: Indicates whether comparisons should be case sensitive. Defaults to `false`
-    public init (location: Int = 0, distance: Int = 100, threshold: Double = 0.6, maxPatternLength: Int = 32, isCaseSensitive: Bool = false) {
+    ///   - tokenize: When true, the search algorithm will search individual words **and** the full string, computing the final score as a function of both. Note that when `tokenize` is `true`, the `threshold`, `distance`, and `location` are inconsequential for individual tokens.
+    public init (location: Int = 0, distance: Int = 100, threshold: Double = 0.6, maxPatternLength: Int = 32, isCaseSensitive: Bool = false, tokenize: Bool = false) {
         self.location = location
         self.distance = distance
         self.threshold = threshold
         self.maxPatternLength = maxPatternLength
         self.isCaseSensitive = isCaseSensitive
+        self.tokenize = tokenize
     }
     
     /// Creates a pattern tuple.
@@ -97,11 +100,51 @@ public class Fuse {
     /// - Parameters:
     ///   - pattern: The pattern to search for. This is created by calling `createPattern`
     ///   - aString: The string in which to search for the pattern
-    /// - Returns: A tuple containing a `score` between `0.0` (exact match) and `1` (not a match), and `ranges` of the matched characters.
+    /// - Returns: A tuple containing a `score` between `0.0` (exact match) and `1` (not a match), and `ranges` of the matched characters. If no match is found will return nil.
     public func search(_ pattern: Pattern?, in aString: String) -> (score: Double, ranges: [CountableClosedRange<Int>])? {
         guard let pattern = pattern else {
             return nil
         }
+        
+        //If tokenize is set we will split the pattern into individual words and take the average which should result in more accurate matches
+        if tokenize {
+            //Split this pattern by the space character
+            let wordPatterns = pattern.text.split(separator: " ").compactMap { createPattern(from: String($0)) }
+            
+            //Get the result for testing the full pattern string. If 2 strings have equal individual word matches this will boost the full string that matches best overall to the top
+            let fullPatternResult = _search(pattern, in: aString)
+            
+            //Reduce all the word pattern matches and the full pattern match into a totals tuple
+            let results = wordPatterns.reduce(into: fullPatternResult) { (totalResult, pattern) in
+                
+                let result = _search(pattern, in: aString)
+                totalResult = (totalResult.score + result.score, totalResult.ranges + result.ranges)
+            }
+            
+            //Average the total score by dividing the summed scores by the number of word searches + the full string search. Also remove any range duplicates since we are searching full string and words individually.
+            let averagedResult = (score: results.score / Double(wordPatterns.count + 1), ranges: Array<CountableClosedRange<Int>>(Set<CountableClosedRange<Int>>(results.ranges)))
+            
+            //If the averaged score is 1 then there were no matches so return nil. Otherwise return the average result
+            return averagedResult.score == 1 ? nil : averagedResult
+            
+        } else {
+            let result = _search(pattern, in: aString)
+
+            //If the averaged score is 1 then there were no matches so return nil. Otherwise return the average result
+            return result.score == 1 ? nil : result
+            
+        }
+    }
+    
+    //// Searches for a pattern in a given string.
+    ///
+    ///     _search(pattern, in: "some string")
+    ///
+    /// - Parameters:
+    ///   - pattern: The pattern to search for. This is created by calling `createPattern`
+    ///   - aString: The string in which to search for the pattern
+    /// - Returns: A tuple containing a `score` between `0.0` (exact match) and `1` (not a match), and `ranges` of the matched characters. If no match is found will return a tuple with score of 1 and empty array of ranges.
+    private func _search(_ pattern: Pattern, in aString: String) -> (score: Double, ranges: [CountableClosedRange<Int>]) {
         
         var text = aString
         
@@ -240,7 +283,7 @@ public class Fuse {
             lastBitArr = bitArr
         }
         
-        return score == 1 ? nil : (score, FuseUtilities.findRanges(matchMaskArr))
+        return (score, FuseUtilities.findRanges(matchMaskArr))
     }
 }
 
@@ -509,3 +552,10 @@ extension Fuse {
         }
     }
 }
+
+#if swift(>=4.2)
+#else
+extension CountableClosedRange: Hashable where Element: Hashable {
+    public var hashValue: Int { return String(describing: self).hashValue }
+}
+#endif
