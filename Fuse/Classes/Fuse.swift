@@ -156,7 +156,7 @@ public class Fuse {
         
         // Exact match
         if (pattern.text == text) {
-            return (0, [CountableClosedRange<Int>(0...textLength - 1)])
+            return (0, [0...textLength - 1])
         }
         
         let location = self.location
