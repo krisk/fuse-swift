@@ -401,6 +401,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = F3AE3F0DB9C00C7D3096AD5FBE449CE7 /* Fuse.xcconfig */;
 			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_IDENTITY = "";
 				"CODE_SIGN_IDENTITY[sdk=appletvos*]" = "";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "";
@@ -663,6 +664,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = F3AE3F0DB9C00C7D3096AD5FBE449CE7 /* Fuse.xcconfig */;
 			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_IDENTITY = "";
 				"CODE_SIGN_IDENTITY[sdk=appletvos*]" = "";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "";
