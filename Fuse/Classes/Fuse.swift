@@ -175,7 +175,7 @@ public class Fuse {
         
         if let bestLoc = bestLocation {
             
-            threshold = min(threshold, FuseUtilities.calculateScore(pattern.text, e: 0, x: location, loc: bestLoc, distance: distance))
+            threshold = min(threshold, FuseUtilities.calculateScore(pattern.len, e: 0, x: location, loc: bestLoc, distance: distance))
             
             // What about in the other direction? (speed up)
             bestLocation = {
@@ -186,7 +186,7 @@ public class Fuse {
             }()
             
             if let bestLocation = bestLocation {
-                threshold = min(threshold, FuseUtilities.calculateScore(pattern.text, e: 0, x: location, loc: bestLocation, distance: distance))
+                threshold = min(threshold, FuseUtilities.calculateScore(pattern.len, e: 0, x: location, loc: bestLocation, distance: distance))
             }
         }
         
@@ -194,6 +194,8 @@ public class Fuse {
         var score = 1.0
         var binMax: Int = pattern.len + textLength
         var lastBitArr = [Int]()
+        
+        let textCount = text.count
         
         // Magic begins now
         for i in 0..<pattern.len {
@@ -204,12 +206,12 @@ public class Fuse {
             var binMid = binMax
             
             while binMin < binMid {
-                if FuseUtilities.calculateScore(pattern.text, e: i, x: location, loc: location + binMid, distance: distance) <= threshold {
+                if FuseUtilities.calculateScore(pattern.len, e: i, x: location, loc: location + binMid, distance: distance) <= threshold {
                     binMin = binMid
                 } else {
                     binMax = binMid
                 }
-                binMid = Int(floor((Double(binMax - binMin) / 2) + Double(binMin)))
+                binMid = ((binMax - binMin) / 2) + binMin
             }
             
             // Use the result from this iteration as the maximum for the next.
@@ -224,13 +226,18 @@ public class Fuse {
             if start > finish {
                 continue
             }
+            
+            var currentLocationIndex: String.Index? = nil
 
             for j in (start...finish).reversed() {
                 let currentLocation = j - 1
                 
+                
                 // Need to check for `nil` case, since `patternAlphabet` is a sparse hash
                 let charMatch: Int = {
-                    if let char = text.char(at: currentLocation) {
+                    if currentLocation < textCount {
+                        currentLocationIndex = currentLocationIndex.map{text.index(before: $0)} ?? text.index(text.startIndex, offsetBy: currentLocation)
+                        let char = text[currentLocationIndex!]
                         if let result = pattern.alphabet[char] {
                             return result
                         }
@@ -252,7 +259,7 @@ public class Fuse {
                 }
                 
                 if (bitArr[j] & pattern.mask) != 0 {
-                    score = FuseUtilities.calculateScore(pattern.text, e: i, x: location, loc: currentLocation, distance: distance)
+                    score = FuseUtilities.calculateScore(pattern.len, e: i, x: location, loc: currentLocation, distance: distance)
                     
                     // This match will almost certainly be better than any existing match. But check anyway.
                     if score <= threshold {
@@ -276,7 +283,7 @@ public class Fuse {
             }
             
             // No hope for a better match at greater error levels
-            if FuseUtilities.calculateScore(pattern.text, e: i + 1, x: location, loc: location, distance: distance) > threshold {
+            if FuseUtilities.calculateScore(pattern.len, e: i + 1, x: location, loc: location, distance: distance) > threshold {
                 break
             }
             
