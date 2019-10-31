@@ -27,7 +27,7 @@ class FuseUtilities {
         }
         return Double(accuracy) + (Double(proximity) / Double(distance))
     }
-    
+
     /// Computes the score for a match with `e` errors and `x` location.
     ///
     /// - Parameter patternLength: Length of pattern being sought.
@@ -44,7 +44,7 @@ class FuseUtilities {
         }
         return Double(accuracy) + (Double(proximity) / Double(distance))
     }
-    
+
     /// Initializes the alphabet for the Bitap algorithm
     ///
     /// - Parameter pattern: The text to encode.
@@ -57,7 +57,7 @@ class FuseUtilities {
         }
         return mask
     }
-    
+
     /// Returns an array of `CountableClosedRange<Int>`, where each range represents a consecutive list of `1`s.
     ///
     ///     let arr = [0, 1, 1, 0, 1, 1, 1 ]
