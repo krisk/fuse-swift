@@ -63,9 +63,9 @@ class Tests: XCTestCase {
     }
     
     func testProtocolWeightedSearch1() {
-        class Book: Fuseable {
-            @objc dynamic let author: String
-            @objc dynamic let title: String
+        struct Book: Fuseable {
+            let author: String
+            let title: String
             
             public init (author: String, title: String) {
                 self.author = author
@@ -74,8 +74,8 @@ class Tests: XCTestCase {
             
             var properties: [FuseProperty] {
                 return [
-                    FuseProperty(name: "title", weight: 0.7),
-                    FuseProperty(name: "author", weight: 0.3),
+                    FuseProperty(name: title, weight: 0.7),
+                    FuseProperty(name: author, weight: 0.3),
                 ]
             }
         }
@@ -94,9 +94,9 @@ class Tests: XCTestCase {
     }
     
     func testProtocolWeightedSearch2() {
-        class Book: Fuseable {
-            @objc dynamic let author: String
-            @objc dynamic let title: String
+        struct Book: Fuseable {
+            let author: String
+            let title: String
             
             public init (author: String, title: String) {
                 self.author = author
@@ -105,8 +105,8 @@ class Tests: XCTestCase {
             
             var properties: [FuseProperty] {
                 return [
-                    FuseProperty(name: "title", weight: 0.3),
-                    FuseProperty(name: "author", weight: 0.7),
+                    FuseProperty(name: title, weight: 0.3),
+                    FuseProperty(name: author, weight: 0.7),
                 ]
             }
         }
@@ -184,9 +184,9 @@ class Tests: XCTestCase {
     }
     
     func testProtocolWeightedSearchTokenized() {
-        class Book: Fuseable {
-            @objc dynamic let author: String
-            @objc dynamic let title: String
+        struct Book: Fuseable {
+            let author: String
+            let title: String
             
             public init (author: String, title: String) {
                 self.author = author
@@ -195,8 +195,8 @@ class Tests: XCTestCase {
             
             var properties: [FuseProperty] {
                 return [
-                    FuseProperty(name: "title", weight: 0.5),
-                    FuseProperty(name: "author", weight: 0.5),
+                    FuseProperty(name: title, weight: 0.5),
+                    FuseProperty(name: author, weight: 0.5),
                 ]
             }
         }
@@ -215,9 +215,9 @@ class Tests: XCTestCase {
     }
     
     func testProtocolWeightedSearchTokenized2() {
-        class Book: Fuseable {
-            @objc dynamic let author: String
-            @objc dynamic let title: String
+        struct Book: Fuseable {
+            let author: String
+            let title: String
             
             public init (author: String, title: String) {
                 self.author = author
@@ -226,8 +226,8 @@ class Tests: XCTestCase {
             
             var properties: [FuseProperty] {
                 return [
-                    FuseProperty(name: "title", weight: 0.5),
-                    FuseProperty(name: "author", weight: 0.5),
+                    FuseProperty(name: title, weight: 0.5),
+                    FuseProperty(name: author, weight: 0.5),
                 ]
             }
         }
