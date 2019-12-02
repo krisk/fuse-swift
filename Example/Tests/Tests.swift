@@ -245,58 +245,52 @@ class Tests: XCTestCase {
         XCTAssert(results[1].index == 1, "The second result is the second book")
     }
     
+    struct Publisher {
+        let name: String
+        let year: String
+    }
+    
     struct Book: Fuseable {
                   
         let author: String
-        let title: String
+        let title: String?
+        let publisher: Publisher?
 
         var properties: [FuseProperty] {
             return [
                 FuseProperty(name: "title", weight: 0.3),
-                FuseProperty(name: "author", weight: 0.7),
+                FuseProperty(name: "author", weight: 0.6),
+                FuseProperty(name: "publisher.name", weight: 0.1),
             ]
         }
     }
     
     func testListOfFuseableStruct() {
-        
+       
         let books: [Book] = [
-            Book(author: "John X", title: "Old Man's War fiction"),
-            Book(author: "P.D. Mans", title: "Right Ho Jeeves"),
-            Book(author: "Robert M. Pirsig", title: "Lila")
+            Book(author: "John X", title: "Old Man's War fiction", publisher: Publisher(name: "Tor Books", year: "2005")),
+            Book(author: "P.D. Mans", title: "Right Ho Jeeves", publisher: Publisher(name: "Herbert Jenkins", year: "1934")),
+            Book(author: "Robert M. Pirsig", title: "Lila", publisher: Publisher(name: "Bantom Books", year: "1991")),
+            Book(author: "Yuval Noah Harari", title: "Sapiens", publisher: Publisher(name: "Harper", year: "2015")),
+            Book(author: "Homer", title: "The Odyssey", publisher: nil)
         ]
         
         let fuse = Fuse()
         
         let results = fuse.search("man", in: books)
 
-        /*
+        
         results.forEach { item in
-            print("-- Fuse Result -----")
+            print("-- Fuseable Result -----")
             print("index: \(item.index)")
             print("score: \(item.score)")
             print("results: \(item.results)")
             print("--------------------")
         }
-        */
         
-        // Expected Output:
-        // ...
-        // index: 0
-        // score: 0.028
-        // results: [(key: "title", score: 0.027999999999999997, ranges: [CountableClosedRange(4...6)])]
-        // ...
-        
-        // Actual Output
-        
-        // ...
-        // index: 0
-        // score: 0.027999999999999997
-        // results: [(key: "Old Man\'s War fiction", score: 0.027999999999999997, ranges: [ClosedRange(4...6)])]
-        // ...
         
         // two matches
-        XCTAssertEqual(results.count, 2)
+        XCTAssertEqual(results.count, 3)
         
         // the key should be the name of the property
         XCTAssertEqual(results[0].results[0].key, "author")
