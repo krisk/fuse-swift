@@ -83,4 +83,9 @@ class FuseUtilities {
         }
         return ranges
     }
+    
+    static func propertyStringValueUsingKey(_ key: String, instance: Any) -> String {
+        let mirror = Mirror(reflecting: instance)
+        return mirror.descendant(key) as? String ?? key
+    }
 }

@@ -245,6 +245,66 @@ class Tests: XCTestCase {
         XCTAssert(results[1].index == 1, "The second result is the second book")
     }
     
+    struct Book: Fuseable {
+                  
+        let author: String
+        let title: String
+
+        var properties: [FuseProperty] {
+            return [
+                FuseProperty(name: "title", weight: 0.3),
+                FuseProperty(name: "author", weight: 0.7),
+            ]
+        }
+    }
+    
+    func testListOfFuseableStruct() {
+        
+        let books: [Book] = [
+            Book(author: "John X", title: "Old Man's War fiction"),
+            Book(author: "P.D. Mans", title: "Right Ho Jeeves"),
+            Book(author: "Robert M. Pirsig", title: "Lila")
+        ]
+        
+        let fuse = Fuse()
+        
+        let results = fuse.search("man", in: books)
+
+        /*
+        results.forEach { item in
+            print("-- Fuse Result -----")
+            print("index: \(item.index)")
+            print("score: \(item.score)")
+            print("results: \(item.results)")
+            print("--------------------")
+        }
+        */
+        
+        // Expected Output:
+        // ...
+        // index: 0
+        // score: 0.028
+        // results: [(key: "title", score: 0.027999999999999997, ranges: [CountableClosedRange(4...6)])]
+        // ...
+        
+        // Actual Output
+        
+        // ...
+        // index: 0
+        // score: 0.027999999999999997
+        // results: [(key: "Old Man\'s War fiction", score: 0.027999999999999997, ranges: [ClosedRange(4...6)])]
+        // ...
+        
+        // two matches
+        XCTAssertEqual(results.count, 2)
+        
+        // the key should be the name of the property
+        XCTAssertEqual(results[0].results[0].key, "author")
+        
+        
+        
+    }
+    
     //MARK: - Performance Tests
     func testPerformanceSync() {
         if let path = Bundle(for: type(of: self)).path(forResource: "books", ofType: "txt") {

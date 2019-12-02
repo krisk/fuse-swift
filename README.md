@@ -69,8 +69,8 @@ struct Book: Fuseable {
 
     var properties: [FuseProperty] {
         return [
-            FuseProperty(name: title, weight: 0.3),
-            FuseProperty(name: author, weight: 0.7),
+            FuseProperty(name: "title", weight: 0.3),
+            FuseProperty(name: "author", weight: 0.7),
         ]
     }
 }
