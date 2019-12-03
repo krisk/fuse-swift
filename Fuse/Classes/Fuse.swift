@@ -505,7 +505,7 @@ extension Fuse {
 
                     item.properties.forEach { property in
 
-                        let value = property.name
+                        let value = FuseUtilities.propertyStringValueUsingKey(property.name, instance: item)
                         
                         if let result = self.search(pattern, in: value) {
                             let weight = property.weight == 1 ? 1 : 1 - property.weight

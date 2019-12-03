@@ -295,7 +295,38 @@ class Tests: XCTestCase {
         // the key should be the name of the property
         XCTAssertEqual(results[0].results[0].key, "author")
         
+    }
+    
+    func testListOfFuseableStructASync() {
+       
+        let books: [Book] = [
+            Book(author: "John X", title: "Old Man's War fiction", publisher: Publisher(name: "Tor Books", year: "2005")),
+            Book(author: "P.D. Mans", title: "Right Ho Jeeves", publisher: Publisher(name: "Herbert Jenkins", year: "1934")),
+            Book(author: "Robert M. Pirsig", title: "Lila", publisher: Publisher(name: "Bantom Books", year: "1991")),
+            Book(author: "Yuval Noah Harari", title: "Sapiens", publisher: Publisher(name: "Harper", year: "2015")),
+            Book(author: "Homer", title: "The Odyssey", publisher: nil)
+        ]
         
+        let fuse = Fuse()
+        
+        // XCTest async
+        let expectation = self.expectation(description: #function)
+        var asyncResult: [Fuse.FusableSearchResult] = []
+        
+        fuse.search("man", in: books){ results in
+            asyncResult = results
+            expectation.fulfill()
+        }
+
+        // Then
+        waitForExpectations(timeout: 10)
+        
+        
+        // two matches
+        XCTAssertEqual(asyncResult.count, 3)
+        
+        // the key should be the name of the property
+        XCTAssertEqual(asyncResult[0].results[0].key, "author")
         
     }
     
