@@ -69,15 +69,15 @@ struct Book: Fuseable {
 
     var properties: [FuseProperty] {
         return [
-            FuseProperty(name: title, weight: 0.3),
-            FuseProperty(name: author, weight: 0.7),
+            FuseProperty(value: title, weight: 0.3),
+            FuseProperty(value: author, weight: 0.7)
         ]
     }
 }
 
 let books: [Book] = [
-    Book(author: "John X", title: "Old Man's War fiction"),
-    Book(author: "P.D. Mans", title: "Right Ho Jeeves")
+    Book(title: "Old Man's War fiction", author: "John X"),
+    Book(title: "Right Ho Jeeves", author: "P.D. Mans")
 ]
 let fuse = Fuse()
 let results = fuse.search("man", in: books)
@@ -92,12 +92,12 @@ results.forEach { item in
 // Output:
 //
 // index: 1
-// score: 0.015
-// results: [(key: "author", score: 0.015000000000000003, ranges: [CountableClosedRange(5...7)])]
+// score: 0.015000000000000003
+// results: [(value: "P.D. Mans", score: 0.015000000000000003, ranges: [CountableClosedRange(5...7)])]
 // ---------------
 // index: 0
-// score: 0.028
-// results: [(key: "title", score: 0.027999999999999997, ranges: [CountableClosedRange(4...6)])]
+// score: 0.027999999999999997
+// results: [(value: "Old Man\'s War fiction", score: 0.027999999999999997, ranges: [CountableClosedRange(4...6)])]
 ```
 
 ##### Asynchronous version

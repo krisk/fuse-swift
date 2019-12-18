@@ -64,25 +64,20 @@ class Tests: XCTestCase {
     
     func testProtocolWeightedSearch1() {
         struct Book: Fuseable {
-            let author: String
             let title: String
-            
-            public init (author: String, title: String) {
-                self.author = author
-                self.title = title
-            }
+            let author: String
             
             var properties: [FuseProperty] {
                 return [
-                    FuseProperty(name: title, weight: 0.7),
-                    FuseProperty(name: author, weight: 0.3),
+                    FuseProperty(value: title, weight: 0.7),
+                    FuseProperty(value: author, weight: 0.3)
                 ]
             }
         }
         
         let books: [Book] = [
-            Book(author: "John X", title: "Old Man's War fiction"),
-            Book(author: "P.D. Mans", title: "Right Ho Jeeves")
+            Book(title: "Old Man's War fiction", author: "John X"),
+            Book(title: "Right Ho Jeeves", author: "P.D. Mans")
         ]
         
         let fuse = Fuse()
@@ -95,25 +90,20 @@ class Tests: XCTestCase {
     
     func testProtocolWeightedSearch2() {
         struct Book: Fuseable {
-            let author: String
             let title: String
-            
-            public init (author: String, title: String) {
-                self.author = author
-                self.title = title
-            }
+            let author: String
             
             var properties: [FuseProperty] {
                 return [
-                    FuseProperty(name: title, weight: 0.3),
-                    FuseProperty(name: author, weight: 0.7),
+                    FuseProperty(value: title, weight: 0.3),
+                    FuseProperty(value: author, weight: 0.7)
                 ]
             }
         }
         
         let books: [Book] = [
-            Book(author: "John X", title: "Old Man's War fiction"),
-            Book(author: "P.D. Mans", title: "Right Ho Jeeves")
+            Book(title: "Old Man's War fiction", author: "John X"),
+            Book(title: "Right Ho Jeeves", author: "P.D. Mans")
         ]
         
         let fuse = Fuse()
@@ -185,25 +175,20 @@ class Tests: XCTestCase {
     
     func testProtocolWeightedSearchTokenized() {
         struct Book: Fuseable {
-            let author: String
             let title: String
-            
-            public init (author: String, title: String) {
-                self.author = author
-                self.title = title
-            }
+            let author: String
             
             var properties: [FuseProperty] {
                 return [
-                    FuseProperty(name: title, weight: 0.5),
-                    FuseProperty(name: author, weight: 0.5),
+                    FuseProperty(value: title, weight: 0.5),
+                    FuseProperty(value: author, weight: 0.5)
                 ]
             }
         }
         
         let books: [Book] = [
-            Book(author: "John X", title: "Old Man's War fiction"),
-            Book(author: "P.D. Mans", title: "Right Ho Jeeves")
+            Book(title: "Old Man's War fiction", author: "John X"),
+            Book(title: "Right Ho Jeeves", author: "P.D. Mans")
         ]
         
         let fuse = Fuse(tokenize: true)
@@ -219,15 +204,10 @@ class Tests: XCTestCase {
             let author: String
             let title: String
             
-            public init (author: String, title: String) {
-                self.author = author
-                self.title = title
-            }
-            
             var properties: [FuseProperty] {
                 return [
-                    FuseProperty(name: title, weight: 0.5),
-                    FuseProperty(name: author, weight: 0.5),
+                    FuseProperty(value: title, weight: 0.5),
+                    FuseProperty(value: author, weight: 0.5)
                 ]
             }
         }
