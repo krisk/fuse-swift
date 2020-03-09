@@ -63,14 +63,14 @@ fuse.search("Te silm", in: books, completion: { results in
 [Reference](Fuse/Classes/Fuse.swift#L360)
 
 ```swift
-class Book: Fuseable {
-    dynamic var name: String
-    dynamic var author: String
+struct Book: Fuseable {
+    let title: String
+    let author: String
 
     var properties: [FuseProperty] {
         return [
-            FuseProperty(name: "title", weight: 0.3),
-            FuseProperty(name: "author", weight: 0.7),
+            FuseProperty(name: title, weight: 0.3),
+            FuseProperty(name: author, weight: 0.7),
         ]
     }
 }

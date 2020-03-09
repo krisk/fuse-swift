@@ -15,5 +15,5 @@ Pod::Spec.new do |s|
   s.ios.deployment_target = '8.0'
   s.osx.deployment_target = '10.13'
   s.source_files = 'Fuse/Classes/**/*'
-  s.swift_version = '4.1.2'
+  s.swift_version = '5.0'
 end
