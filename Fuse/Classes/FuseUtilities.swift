@@ -74,12 +74,12 @@ class FuseUtilities {
             if start == -1 && bit == 1 {
                 start = n
             } else if start != -1 && bit == 0 {
-                ranges.append(start..<n)
+                ranges.append(CountableClosedRange<Int>(start..<n))
                 start = -1
             }
         }
         if mask.last == 1 {
-            ranges.append(start..<mask.count)
+            ranges.append(CountableClosedRange<Int>(start..<mask.count))
         }
         return ranges
     }
