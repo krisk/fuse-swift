@@ -59,7 +59,7 @@ class Tests: XCTestCase {
         let results = fuse.search("silm", in: books)
 
         XCTAssert(results[0].ranges.count == 1, "There is a matching range in the first result")
-        XCTAssert(results[0].ranges[0] == CountableClosedRange(4...7), "The range goes over the matched substring")
+        XCTAssert(results[0].ranges[0] == 4...7, "The range goes over the matched substring")
     }
     
     func testProtocolWeightedSearch1() {
@@ -180,7 +180,7 @@ class Tests: XCTestCase {
         let results = fuse.search("silm", in: books)
         
         XCTAssert(results[0].ranges.count == 1, "There is a matching range in the first result")
-        XCTAssert(results[0].ranges[0] == CountableClosedRange(4...7), "The range goes over the matched substring")
+        XCTAssert(results[0].ranges[0] == 4...7, "The range goes over the matched substring")
     }
     
     func testProtocolWeightedSearchTokenized() {
