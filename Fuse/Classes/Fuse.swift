@@ -356,8 +356,8 @@ extension Fuse {
         let group = DispatchGroup()
         let count = aList.count
         
-        stride(from: 0, to: count, by: chunkSize).forEach {
-            let chunk = Array(aList[$0..<min($0 + chunkSize, count)])
+        stride(from: 0, to: count, by: chunkSize).forEach { offset in
+            let chunk = Array(aList[offset..<min(offset + chunkSize, count)])
             group.enter()
             self.searchQueue.async {
                 for (index, item) in chunk.enumerated() {
@@ -366,7 +366,7 @@ extension Fuse {
                         // that simplifies coordination with the dispatch group
                         // and it should execute very quickly anyway.
                         itemsQueue.sync {
-                            items.append((index, result.score, result.ranges))
+                            items.append((offset + index, result.score, result.ranges))
                         }
                     }
                 }
@@ -510,8 +510,8 @@ extension Fuse {
         // to need to debug work items running on this queue.
         let collectionResultQueue = DispatchQueue(label: "fuse.result.queue")
         
-        stride(from: 0, to: count, by: chunkSize).forEach {
-            let chunk = Array(aList[$0..<min($0 + chunkSize, count)])
+        stride(from: 0, to: count, by: chunkSize).forEach { offset in
+            let chunk = Array(aList[offset..<min(offset + chunkSize, count)])
             group.enter()
             self.searchQueue.async {
                 for (index, item) in chunk.enumerated() {
@@ -544,7 +544,7 @@ extension Fuse {
                     // and it should execute very quickly anyway.
                     collectionResultQueue.sync {
                         collectionResult.append((
-                            index: index,
+                            index: offset + index,
                             score: totalScore / Double(scores.count),
                             results: propertyResults
                         ))
