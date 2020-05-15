@@ -348,6 +348,11 @@ extension Fuse {
         
         var items = [SearchResult]()
         
+        // Serialize writes to `items`, for thread safety.
+        // This label is non-unique but that should be fine as we don't expect
+        // to need to debug work items running on this queue.
+        let itemsQueue = DispatchQueue(label: "fuse.items.queue")
+        
         let group = DispatchGroup()
         let count = aList.count
         
@@ -357,7 +362,12 @@ extension Fuse {
             self.searchQueue.async {
                 for (index, item) in chunk.enumerated() {
                     if let result = self.search(pattern, in: item) {
-                        items.append((index, result.score, result.ranges))
+                        // This write doesn't technically need to be `sync` but
+                        // that simplifies coordination with the dispatch group
+                        // and it should execute very quickly anyway.
+                        itemsQueue.sync {
+                            items.append((index, result.score, result.ranges))
+                        }
                     }
                 }
                 
@@ -366,6 +376,8 @@ extension Fuse {
         }
     
         group.notify(queue: self.searchQueue) {
+            // This read does not need to be protected by the queue given that
+            // there's no longer concurrent access at this point.
             let sorted = items.sorted { $0.score < $1.score }
             DispatchQueue.main.async {
                 completion(sorted)
@@ -493,6 +505,11 @@ extension Fuse {
         
         var collectionResult = [FusableSearchResult]()
         
+        // Serialize writes to `collectionResult`, for thread safety.
+        // This label is non-unique but that should be fine as we don't expect
+        // to need to debug work items running on this queue.
+        let collectionResultQueue = DispatchQueue(label: "fuse.result.queue")
+        
         stride(from: 0, to: count, by: chunkSize).forEach {
             let chunk = Array(aList[$0..<min($0 + chunkSize, count)])
             group.enter()
@@ -522,11 +539,16 @@ extension Fuse {
                         continue
                     }
                     
-                    collectionResult.append((
-                        index: index,
-                        score: totalScore / Double(scores.count),
-                        results: propertyResults
-                    ))
+                    // This write doesn't technically need to be `sync` but
+                    // that simplifies coordination with the dispatch group
+                    // and it should execute very quickly anyway.
+                    collectionResultQueue.sync {
+                        collectionResult.append((
+                            index: index,
+                            score: totalScore / Double(scores.count),
+                            results: propertyResults
+                        ))
+                    }
                 }
                 
                 group.leave()
@@ -534,6 +556,8 @@ extension Fuse {
         }
         
         group.notify(queue: self.searchQueue) {
+            // This read does not need to be protected by the queue given that
+            // there's no longer concurrent access at this point.
             let sorted = collectionResult.sorted { $0.score < $1.score }
             DispatchQueue.main.async {
                 completion(sorted)
