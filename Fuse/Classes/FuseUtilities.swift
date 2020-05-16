@@ -8,7 +8,6 @@
 
 import Foundation
 
-
 class FuseUtilities {
     /// Computes the score for a match with `e` errors and `x` location.
     ///

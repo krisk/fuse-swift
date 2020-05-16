@@ -116,7 +116,6 @@ public class Fuse {
             
             //Reduce all the word pattern matches and the full pattern match into a totals tuple
             let results = wordPatterns.reduce(into: fullPatternResult) { (totalResult, pattern) in
-                
                 let result = _search(pattern, in: aString)
                 totalResult = (totalResult.score + result.score, totalResult.ranges + result.ranges)
             }
@@ -173,24 +172,29 @@ public class Fuse {
         // A mask of the matches. We'll use to determine all the ranges of the matches
         var matchMaskArr = [Int](repeating: 0, count: textLength)
         
-        if let bestLoc = bestLocation {
+        // Get all exact matches, here for speed up
+        var index = text.index(of: pattern.text, startingFrom: bestLocation)
+        while (index != nil) {
+            let i = text.distance(from: text.startIndex, to: index!)
+            let score = FuseUtilities.calculateScore(pattern.len,
+                                                     e: 0,
+                                                     x: i,
+                                                     loc: location,
+                                                     distance: distance)
+            threshold = min(threshold, score)
+            bestLocation = i + pattern.len
+            index = text.index(of: pattern.text, startingFrom: bestLocation)
             
-            threshold = min(threshold, FuseUtilities.calculateScore(pattern.len, e: 0, x: location, loc: bestLoc, distance: distance))
-            
-            // What about in the other direction? (speed up)
-            bestLocation = {
-                if let index = text.lastIndexOf(pattern.text, position: location + pattern.len) {
-                    return text.distance(from: text.startIndex, to: index)
-                }
-                return nil
-            }()
-            
-            if let bestLocation = bestLocation {
-                threshold = min(threshold, FuseUtilities.calculateScore(pattern.len, e: 0, x: location, loc: bestLocation, distance: distance))
+            var idx = 0
+            while (idx < pattern.len) {
+              matchMaskArr[i + idx] = 1
+              idx += 1
             }
         }
         
+        // Reset the best location
         bestLocation = nil
+        
         var score = 1.0
         var binMax: Int = pattern.len + textLength
         var lastBitArr = [Int]()
@@ -231,7 +235,6 @@ public class Fuse {
 
             for j in (start...finish).reversed() {
                 let currentLocation = j - 1
-                
                 
                 // Need to check for `nil` case, since `patternAlphabet` is a sparse hash
                 let charMatch: Int = {
@@ -405,7 +408,7 @@ extension Fuse {
     ///         }
     ///     }
     ///
-    /// Searching is straightforward:
+    /// Searching:
     ///
     ///     let books: [Book] = [
     ///         Book(author: "John X", title: "Old Man's War fiction"),
@@ -431,7 +434,6 @@ extension Fuse {
             var propertyResults = [(key: String, score: Double, ranges: [CountableClosedRange<Int>])]()
 
             item.properties.forEach { property in
-
                 let value = property.name
                 
                 if let result = self.search(pattern, in: value) {
@@ -480,7 +482,7 @@ extension Fuse {
     ///         }
     ///     }
     ///
-    /// Searching is straightforward:
+    /// Searching:
     ///
     ///     let books: [Book] = [
     ///         Book(author: "John X", title: "Old Man's War fiction"),
