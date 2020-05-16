@@ -8,7 +8,7 @@ Pod::Spec.new do |s|
 
   s.homepage         = 'https://github.com/krisk/fuse-swift'
   s.license          = { :type => 'MIT', :file => 'LICENSE' }
-  s.author           = { 'Kirollos Risk' => 'kirollos@gmail.com' }
+  s.author           = { 'Kiro Risk' => 'kirollos@gmail.com' }
   s.source           = { :git => 'https://github.com/krisk/fuse-swift.git', :tag => s.version.to_s }
   s.social_media_url = 'https://twitter.com/kirorisk'
 
