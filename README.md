@@ -87,14 +87,6 @@ results.forEach { item in
 
 #### Example 4
 
-Asynchronously searches for a text pattern in an array of srings.
-
-```swift
-
-```
-
-#### Example 4
-
 ```swift
 let fuse = Fuse()
 fuse.search("Man", in: books, completion: { results in
