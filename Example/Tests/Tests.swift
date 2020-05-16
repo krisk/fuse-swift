@@ -245,6 +245,91 @@ class Tests: XCTestCase {
         XCTAssert(results[1].index == 1, "The second result is the second book")
     }
     
+    struct Publisher {
+        let name: String
+        let year: String
+    }
+    
+    struct Book: Fuseable {
+                  
+        let author: String
+        let title: String?
+        let publisher: Publisher?
+
+        var properties: [FuseProperty] {
+            return [
+                FuseProperty(name: "title", weight: 0.3),
+                FuseProperty(name: "author", weight: 0.6),
+                FuseProperty(name: "publisher.name", weight: 0.1),
+            ]
+        }
+    }
+    
+    func testListOfFuseableStruct() {
+       
+        let books: [Book] = [
+            Book(author: "John X", title: "Old Man's War fiction", publisher: Publisher(name: "Tor Books", year: "2005")),
+            Book(author: "P.D. Mans", title: "Right Ho Jeeves", publisher: Publisher(name: "Herbert Jenkins", year: "1934")),
+            Book(author: "Robert M. Pirsig", title: "Lila", publisher: Publisher(name: "Bantom Books", year: "1991")),
+            Book(author: "Yuval Noah Harari", title: "Sapiens", publisher: Publisher(name: "Harper", year: "2015")),
+            Book(author: "Homer", title: "The Odyssey", publisher: nil)
+        ]
+        
+        let fuse = Fuse()
+        
+        let results = fuse.search("man", in: books)
+
+        
+        results.forEach { item in
+            print("-- Fuseable Result -----")
+            print("index: \(item.index)")
+            print("score: \(item.score)")
+            print("results: \(item.results)")
+            print("--------------------")
+        }
+        
+        
+        // two matches
+        XCTAssertEqual(results.count, 3)
+        
+        // the key should be the name of the property
+        XCTAssertEqual(results[0].results[0].key, "author")
+        
+    }
+    
+    func testListOfFuseableStructASync() {
+       
+        let books: [Book] = [
+            Book(author: "John X", title: "Old Man's War fiction", publisher: Publisher(name: "Tor Books", year: "2005")),
+            Book(author: "P.D. Mans", title: "Right Ho Jeeves", publisher: Publisher(name: "Herbert Jenkins", year: "1934")),
+            Book(author: "Robert M. Pirsig", title: "Lila", publisher: Publisher(name: "Bantom Books", year: "1991")),
+            Book(author: "Yuval Noah Harari", title: "Sapiens", publisher: Publisher(name: "Harper", year: "2015")),
+            Book(author: "Homer", title: "The Odyssey", publisher: nil)
+        ]
+        
+        let fuse = Fuse()
+        
+        // XCTest async
+        let expectation = self.expectation(description: #function)
+        var asyncResult: [Fuse.FusableSearchResult] = []
+        
+        fuse.search("man", in: books){ results in
+            asyncResult = results
+            expectation.fulfill()
+        }
+
+        // Then
+        waitForExpectations(timeout: 10)
+        
+        
+        // two matches
+        XCTAssertEqual(asyncResult.count, 3)
+        
+        // the key should be the name of the property
+        XCTAssertEqual(asyncResult[0].results[0].key, "author")
+        
+    }
+    
     //MARK: - Performance Tests
     func testPerformanceSync() {
         if let path = Bundle(for: type(of: self)).path(forResource: "books", ofType: "txt") {
