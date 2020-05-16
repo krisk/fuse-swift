@@ -9,15 +9,12 @@
 import Foundation
 
 public struct FuseProperty {
-    let name: String
+    let value: String
     let weight: Double
     
-    public init (name: String) {
-        self.init(name: name, weight: 1)
-    }
+    public init (value: String, weight: Double = 1.0) {
+        self.value = value
     
-    public init (name: String, weight: Double) {
-        self.name = name
         self.weight = weight
     }
 }
@@ -42,7 +39,7 @@ public class Fuse {
         index: Int,
         score: Double,
         results: [(
-            key: String,
+            value: String,
             score: Double,
             ranges: [CountableClosedRange<Int>]
         )]
@@ -387,7 +384,7 @@ extension Fuse {
     
     /// Searches for a text pattern in an array of `Fuseable` objects.
     ///
-    /// Each `FuseSearchable` object contains a `properties` accessor which returns `FuseProperty` array. Each `FuseProperty` is a tuple containing a `key` (the value of the property which should be included in the search), and a `weight` (how much "weight" to assign to the score)
+    /// Each `FuseSearchable` object contains a `properties` accessor which returns `FuseProperty` array. Each `FuseProperty` is a tuple containing a `value` (the value of the property which should be included in the search), and a `weight` (how much "weight" to assign to the score)
     ///
     /// ## Example
     ///
@@ -399,8 +396,8 @@ extension Fuse {
     ///
     ///         var properties: [FuseProperty] {
     ///             return [
-    ///                 FuseProperty(name: title, weight: 0.3),
-    ///                 FuseProperty(name: author, weight: 0.7),
+    ///                 FuseProperty(value: title, weight: 0.7),
+    ///                 FuseProperty(value: author, weight: 0.3)
     ///             ]
     ///         }
     ///     }
@@ -408,8 +405,8 @@ extension Fuse {
     /// Searching is straightforward:
     ///
     ///     let books: [Book] = [
-    ///         Book(author: "John X", title: "Old Man's War fiction"),
-    ///         Book(author: "P.D. Mans", title: "Right Ho Jeeves")
+    ///         Book(title: "Old Man's War fiction", author: "John X"),
+    ///         Book(title: "Right Ho Jeeves", author: "P.D. Mans")
     ///     ]
     ///
     ///     let fuse = Fuse()
@@ -428,11 +425,11 @@ extension Fuse {
             var scores = [Double]()
             var totalScore = 0.0
             
-            var propertyResults = [(key: String, score: Double, ranges: [CountableClosedRange<Int>])]()
+            var propertyResults = [(value: String, score: Double, ranges: [CountableClosedRange<Int>])]()
 
             item.properties.forEach { property in
 
-                let value = property.name
+                let value = property.value
                 
                 if let result = self.search(pattern, in: value) {
                     let weight = property.weight == 1 ? 1 : 1 - property.weight
@@ -441,7 +438,7 @@ extension Fuse {
                     
                     scores.append(score)
                     
-                    propertyResults.append((key: property.name, score: score, ranges: result.ranges))
+                    propertyResults.append((value: property.value, score: score, ranges: result.ranges))
                 }
             }
             
@@ -462,7 +459,7 @@ extension Fuse {
     
     /// Asynchronously searches for a text pattern in an array of `Fuseable` objects.
     ///
-    /// Each `FuseSearchable` object contains a `properties` accessor which returns `FuseProperty` array. Each `FuseProperty` is a tuple containing a `key` (the value of the property which should be included in the search), and a `weight` (how much "weight" to assign to the score)
+    /// Each `FuseSearchable` object contains a `properties` accessor which returns `FuseProperty` array. Each `FuseProperty` is a tuple containing a `value` (the value of the property which should be included in the search), and a `weight` (how much "weight" to assign to the score)
     ///
     /// ## Example
     ///
@@ -474,8 +471,8 @@ extension Fuse {
     ///
     ///         var properties: [FuseProperty] {
     ///             return [
-    ///                 FuseProperty(name: title, weight: 0.3),
-    ///                 FuseProperty(name: author, weight: 0.7),
+    ///                 FuseProperty(value: title, weight: 0.7),
+    ///                 FuseProperty(value: author, weight: 0.3)
     ///             ]
     ///         }
     ///     }
@@ -483,8 +480,8 @@ extension Fuse {
     /// Searching is straightforward:
     ///
     ///     let books: [Book] = [
-    ///         Book(author: "John X", title: "Old Man's War fiction"),
-    ///         Book(author: "P.D. Mans", title: "Right Ho Jeeves")
+    ///         Book(title: "Old Man's War fiction", author: "John X"),
+    ///         Book(title: "Right Ho Jeeves", author: "P.D. Mans")
     ///     ]
     ///
     ///     let fuse = Fuse()
@@ -518,11 +515,11 @@ extension Fuse {
                     var scores = [Double]()
                     var totalScore = 0.0
                     
-                    var propertyResults = [(key: String, score: Double, ranges: [CountableClosedRange<Int>])]()
+                    var propertyResults = [(value: String, score: Double, ranges: [CountableClosedRange<Int>])]()
 
                     item.properties.forEach { property in
 
-                        let value = property.name
+                        let value = property.value
                         
                         if let result = self.search(pattern, in: value) {
                             let weight = property.weight == 1 ? 1 : 1 - property.weight
@@ -531,7 +528,7 @@ extension Fuse {
                             
                             scores.append(score)
                             
-                            propertyResults.append((key: property.name, score: score, ranges: result.ranges))
+                            propertyResults.append((value: property.value, score: score, ranges: result.ranges))
                         }
                     }
                     
