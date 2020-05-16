@@ -18,13 +18,7 @@ class FuseUtilities {
     /// - Parameter scoreTextLength: Coerced version of text's length.
     /// - Returns: Overall score for match (0.0 = good, 1.0 = bad).
     static func calculateScore(_ pattern: String, e: Int, x: Int, loc: Int, distance: Int) -> Double {
-        let len = pattern.count
-        let accuracy = Double(e) / Double(len)
-        let proximity = abs(x - loc)
-        if (distance == 0) {
-            return Double(proximity != 0 ? 1 : accuracy)
-        }
-        return Double(accuracy) + (Double(proximity) / Double(distance))
+        return calculateScore(pattern.count, e: e, x: x, loc: loc, distance: distance)
     }
 
     /// Computes the score for a match with `e` errors and `x` location.
