@@ -360,18 +360,21 @@ extension Fuse {
             let chunk = Array(aList[offset..<min(offset + chunkSize, count)])
             group.enter()
             self.searchQueue.async {
+                let itemGroup = DispatchGroup()
+                
                 for (index, item) in chunk.enumerated() {
                     if let result = self.search(pattern, in: item) {
-                        // This write doesn't technically need to be `sync` but
-                        // that simplifies coordination with the dispatch group
-                        // and it should execute very quickly anyway.
-                        itemsQueue.sync {
+                        itemGroup.enter()
+                        itemsQueue.async {
                             items.append((offset + index, result.score, result.ranges))
+                            itemGroup.leave()
                         }
                     }
                 }
                 
-                group.leave()
+                itemGroup.notify(queue: self.searchQueue) {
+                    group.leave()
+                }
             }
         }
     
@@ -514,6 +517,8 @@ extension Fuse {
             let chunk = Array(aList[offset..<min(offset + chunkSize, count)])
             group.enter()
             self.searchQueue.async {
+                let resultGroup = DispatchGroup()
+                
                 for (index, item) in chunk.enumerated() {
                     var scores = [Double]()
                     var totalScore = 0.0
@@ -539,19 +544,20 @@ extension Fuse {
                         continue
                     }
                     
-                    // This write doesn't technically need to be `sync` but
-                    // that simplifies coordination with the dispatch group
-                    // and it should execute very quickly anyway.
-                    collectionResultQueue.sync {
+                    resultGroup.enter()
+                    collectionResultQueue.async {
                         collectionResult.append((
                             index: offset + index,
                             score: totalScore / Double(scores.count),
                             results: propertyResults
                         ))
+                        resultGroup.leave()
                     }
                 }
                 
-                group.leave()
+                resultGroup.notify(queue: self.searchQueue) {
+                    group.leave()
+                }
             }
         }
         
