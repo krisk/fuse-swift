@@ -360,19 +360,16 @@ extension Fuse {
             let chunk = Array(aList[offset..<min(offset + chunkSize, count)])
             group.enter()
             self.searchQueue.async {
-                let itemGroup = DispatchGroup()
+                var chunkItems = [SearchResult]()
                 
                 for (index, item) in chunk.enumerated() {
                     if let result = self.search(pattern, in: item) {
-                        itemGroup.enter()
-                        itemsQueue.async {
-                            items.append((offset + index, result.score, result.ranges))
-                            itemGroup.leave()
-                        }
+                        chunkItems.append((offset + index, result.score, result.ranges))
                     }
                 }
                 
-                itemGroup.notify(queue: self.searchQueue) {
+                itemsQueue.async {
+                    items.append(contentsOf: chunkItems)
                     group.leave()
                 }
             }
@@ -517,7 +514,7 @@ extension Fuse {
             let chunk = Array(aList[offset..<min(offset + chunkSize, count)])
             group.enter()
             self.searchQueue.async {
-                let resultGroup = DispatchGroup()
+                var chunkResult = [FusableSearchResult]()
                 
                 for (index, item) in chunk.enumerated() {
                     var scores = [Double]()
@@ -544,18 +541,15 @@ extension Fuse {
                         continue
                     }
                     
-                    resultGroup.enter()
-                    collectionResultQueue.async {
-                        collectionResult.append((
-                            index: offset + index,
-                            score: totalScore / Double(scores.count),
-                            results: propertyResults
-                        ))
-                        resultGroup.leave()
-                    }
+                    chunkResult.append((
+                        index: offset + index,
+                        score: totalScore / Double(scores.count),
+                        results: propertyResults
+                    ))
                 }
                 
-                resultGroup.notify(queue: self.searchQueue) {
+                collectionResultQueue.async {
+                    collectionResult.append(contentsOf: chunkResult)
                     group.leave()
                 }
             }
