@@ -11,7 +11,7 @@
 
 Fuse is a super lightweight library which provides a simple way to do fuzzy searching.
 
-![Demo](https://s17.postimg.org/47a90nmvj/bitap-search-demo.gif)
+![Demo](https://i.postimg.cc/MZNZPD1F/bitap-search-demo.gif)
 
 ## Usage
 
@@ -92,14 +92,7 @@ let fuse = Fuse()
 fuse.search("Man", in: books, completion: { results in
     print(results)
 })
-
-```swift
-let fuse = Fuse()
-fuse.search("Man", in: books, completion: { results in
-    print(results)
-})
 ```
-
 
 ### Options
 
