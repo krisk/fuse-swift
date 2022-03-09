@@ -14,10 +14,10 @@ extension String {
     /// - Parameter index: some index
     /// - Returns: the character at the provided index
     func char(at index: Int) -> Character? {
-        if index >= self.count {
+        if index >= count {
             return nil
         }
-        return self[self.index(self.startIndex, offsetBy: index)]
+        return self[self.index(startIndex, offsetBy: index)]
     }
 
     /// Searches and returns the index within the string of the first occurrence of `searchStr`.
@@ -31,12 +31,12 @@ extension String {
             return nil
         }
 
-        if self.count < position {
+        if count < position {
             return nil
         }
 
-        let start: String.Index = self.index(self.startIndex, offsetBy: position)
-        let range: Range<Index> = Range<Index>.init(uncheckedBounds: (lower: start, upper: self.endIndex))
+        let start: String.Index = index(startIndex, offsetBy: position)
+        let range = Range<Index>(uncheckedBounds: (lower: start, upper: endIndex))
         return self.range(of: aString, options: .literal, range: range, locale: nil)?.lowerBound
     }
 
@@ -51,13 +51,14 @@ extension String {
             return nil
         }
 
-        let len = self.count
+        let len = count
         let start = min(max(position, 0), len)
         let searchLen = searchStr.count
-        let r: Range<Index> = Range<Index>.init(uncheckedBounds: (lower: self.startIndex, upper: self.index(self.startIndex, offsetBy: min(start + searchLen, len))))
-        if let range = self.range(of: searchStr, options: [.backwards, .literal], range: r) {
+        let searchRange = Range<Index>(uncheckedBounds: (lower: startIndex, upper: index(startIndex, offsetBy: min(start + searchLen, len))))
+        if let range = range(of: searchStr, options: [.backwards, .literal], range: searchRange) {
             return range.lowerBound
-        } else {
+        }
+        else {
             return nil
         }
     }

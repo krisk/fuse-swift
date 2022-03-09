@@ -1,3 +1,8 @@
+# Version 1.2.0
+
+ - Refactor files
+ - Remove pods
+
 # Version 1.1.0
 
 - Added asynchronous searching in both `[String]` and `[Fusable]`.
