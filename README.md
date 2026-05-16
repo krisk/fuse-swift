@@ -1,10 +1,12 @@
 # fuse-swift
 
-<!-- Badges: CI, SPM, platforms, license -->
+<!-- Badges (CI / SPM / platforms / license) will land alongside the first public tag. -->
 
-The official Swift port of [fuse.js](https://github.com/krisk/fuse), a lightweight fuzzy-search library.
+The official Swift port of [fuse.js](https://github.com/krisk/fuse). Byte-equivalent results, idiomatic Swift API, syncs with each upstream release.
 
-> Status: pre-release. v1 is in active development. See `.plans/active/PLAN.md` for scope.
+## Status
+
+v2.0.0-rc.1 candidate. v1 scope is feature-complete and has 253 unit tests plus a cross-runtime parity check against fuse-js 7.4.0-beta.5 (25 query cases, 138 result records, all match within 1e-9 score tolerance). First public tag is pending LICENSE selection and a short feedback window.
 
 ## Install
 
@@ -15,50 +17,272 @@ dependencies: [
 ]
 ```
 
-## Quick start: string array search
+Platforms: iOS 15+, macOS 12+, tvOS 15+, watchOS 8+, visionOS 1+, Linux. Builds clean under Swift 5.9 and Swift 6.x with `-strict-concurrency=complete`.
+
+## Quick start: string array
 
 ```swift
-// TODO: 30-second example lands with phase 6.
+import Fuse
+
+let fruits = ["apple", "orange", "banana", "pear", "grape", "kiwi", "mango", "plum"]
+
+let options = try FuseOptions<String>(includeScore: true)
+let fuse = try Fuse.Search<String>(fruits, options: options)
+
+for r in fuse.search("ange", limit: 3) {
+    print(r.refIndex, r.item, r.score!)
+}
+// 1 orange 0.02
+// 6 mango  0.26
+// 2 banana 0.51
 ```
 
-## Quick start: keyed search with weights
+## Quick start: keyed objects with weighted keys
 
 ```swift
-// TODO: 30-second example lands with phase 8.
+import Fuse
+
+struct Book: Codable, Sendable {
+    let title: String
+    let author: Author
+}
+struct Author: Codable, Sendable {
+    let firstName: String
+    let lastName: String
+}
+
+let books = [
+    Book(title: "Old Man's War",   author: .init(firstName: "John",  lastName: "Scalzi")),
+    Book(title: "The Lock Artist", author: .init(firstName: "Steve", lastName: "Hamilton")),
+    Book(title: "HTML5",           author: .init(firstName: "Remy",  lastName: "Sharp")),
+]
+
+let options = try FuseOptions<Book>(
+    includeMatches: true,
+    includeScore: true,
+    keys: [
+        try FuseKey<Book>("title", keyPath: \Book.title, weight: 0.7),
+        try FuseKey<Book>(path: "author.firstName", weight: 0.3),
+    ]
+)
+let fuse = try Fuse.Search<Book>(books, options: options)
+
+let results = fuse.search("stve")
+print(results[0].item.title)
+// "The Lock Artist"
+
+// With `includeMatches: true`, each `FuseResult.matches` entry carries
+// the configured key (`.string("title")` or `.string("author.firstName")`),
+// the matched sub-record value, sorted UTF-16 indices, and (for array-
+// derived keys) the source-array refIndex. See `Examples/CLI/` for a
+// runnable walkthrough.
 ```
 
-## Options reference
+`FuseKey` has three accessor forms:
+
+- **`.keyPath`** — type-safe Swift `KeyPath` into a stored property. Compile-time checked; doesn't require `Encodable`.
+- **`.path`** (single dotted string or array of segments) — runtime path walked against the encoded JSON of the element. Requires `Element: Encodable` or a custom `getFn`.
+- **`.closure`** — `@Sendable (Element) -> String | String? | [String]` for fields that need computation or come from non-Encodable types.
+
+All initializers throw on `weight <= 0`, so call sites use `try`.
+
+## `FuseOptions` reference
 
 | Option | Default | Notes |
 |---|---|---|
-| _TODO_ | | Filled in during phase 11 polish. |
+| `isCaseSensitive` | `false` | When `false`, pattern and text are JS-equivalent lowercased before bitap. |
+| `ignoreDiacritics` | `false` | When `true`, both pattern and text run through a literal port of fuse.js's three-step diacritic strip (NFD + scalar-range filter + `NON_DECOMPOSABLE_MAP`). |
+| `includeMatches` | `false` | Populates `FuseResult.matches` with sub-record indices, keys, and values. |
+| `includeScore` | `false` | Populates `FuseResult.score`. |
+| `keys` | `[]` | Array of `FuseKey<Element>`. Empty for `Fuse.Search<String>`; one or more for keyed object search. |
+| `shouldSort` | `true` | Sort by ascending score. Overridden by `limit > 0` (see below). |
+| `sortFn` | `nil` | Custom `(FuseSortItem<Element>, FuseSortItem<Element>) -> ComparisonResult`. With `limit > 0`, the heap selects the top-N by score and `sortFn` only re-orders the extracted N. |
+| `location` | `0` | Expected match position. |
+| `threshold` | `0.6` | Maximum per-text bitap score for `isMatch == true`. `0` requires an exact substring; `1` matches anything. |
+| `distance` | `100` | Score penalty applied per character away from `location`. |
+| `findAllMatches` | `false` | When `true`, the bitap scan covers the full text length even after a match is found. |
+| `minMatchCharLength` | `1` | Minimum run length emitted in `FuseMatch.indices`. |
+| `ignoreLocation` | `false` | Drop the position penalty entirely. |
+| `ignoreFieldNorm` | `false` | Drop the field-length norm from the score (long and short fields rank by raw bitap score). |
+| `fieldNormWeight` | `1.0` | Exponent multiplier on the field norm. |
+| `getFn` | `nil` | Top-level `@Sendable (Element, [String]) -> AccessorResult` that overrides the default JSON walker for `.path` keys only. |
 
-_Coming in v1.1:_ `useExtendedSearch`, `useTokenSearch`, `tokenize`.
+*Coming in v1.1:* `useExtendedSearch`, `useTokenSearch`, `tokenize`.
 
 ## Index persistence
 
-`Fuse.createIndex` and `Fuse.parseIndex` round-trip the index through JSON. Details land with phase 7.
+`Fuse.createIndex` builds an index once; `toJSON()` serializes it to upstream-compatible JSON; `Fuse.parseIndex` reads it back. Useful for warm-starting large collections.
 
-## Parity and version policy
+```swift
+let books = /* ... */
+let keys  = [try FuseKey<Book>("title", keyPath: \Book.title)]
 
-Each fuse-js release triggers a `chore(sync): fuse-js vX.Y.Z` PR. A version-mapping table tracks which fuse-js version each fuse-swift release targets.
+// Build once, persist.
+let index = try Fuse.createIndex(keys, books)
+let data  = try index.toJSON()
+try data.write(to: cacheURL)
 
-| fuse-swift | fuse-js | Notes |
+// Later: parse, then construct Fuse.Search with the prebuilt index.
+let restored: FuseIndex<Book> = try Fuse.parseIndex(try Data(contentsOf: cacheURL))
+let fuse = try Fuse.Search<Book>(
+    books,
+    options: try FuseOptions<Book>(keys: keys),
+    index: restored
+)
+```
+
+The supplied index is copy-on-adopt — `Fuse.Search` never mutates the user's instance. The serialized JSON shape matches fuse.js's (`{records, keys}` with `{v, i, n}` for string records and `{i, $: {...}}` for object records), so an index built by fuse.js can be loaded by fuse-swift and vice versa.
+
+## Coming from fuse.js
+
+The translation is mechanical. The biggest surface change is that fuse-swift puts the element type in the generic (`Fuse.Search<Book>`) rather than the constructor argument, and keys are typed `FuseKey` values rather than strings/dicts.
+
+**Constructor.**
+
+```js
+// fuse.js
+const fuse = new Fuse(list, { keys: ['title'], includeScore: true })
+```
+
+```swift
+// fuse-swift
+let fuse = try Fuse.Search<Book>(list, options: try FuseOptions<Book>(
+    includeScore: true,
+    keys: [try FuseKey<Book>("title", keyPath: \Book.title)]
+))
+```
+
+**String keys → typed key paths.**
+
+```js
+keys: ['title', 'author.firstName']
+```
+
+```swift
+keys: [
+    try FuseKey<Book>("title", keyPath: \Book.title),
+    try FuseKey<Book>(path: "author.firstName"),
+]
+```
+
+**Weighted keys.**
+
+```js
+keys: [
+    { name: 'title',             weight: 0.7 },
+    { name: 'author.firstName',  weight: 0.3 },
+]
+```
+
+```swift
+keys: [
+    try FuseKey<Book>("title", keyPath: \Book.title, weight: 0.7),
+    try FuseKey<Book>(path: "author.firstName",      weight: 0.3),
+]
+```
+
+**Array-form path (literal-dot segments).**
+
+```js
+keys: [['author', 'first.name']]
+```
+
+```swift
+keys: [try FuseKey<Book>(path: ["author", "first.name"])]
+```
+
+**Custom `getFn`.**
+
+```js
+new Fuse(list, { keys: ['author'], getFn: (obj) => obj.author.lastName })
+```
+
+```swift
+try Fuse.Search<Book>(
+    list,
+    options: try FuseOptions<Book>(
+        keys: [try FuseKey<Book>(path: "author")],
+        getFn: { book, _ in .single(book.author.lastName) }
+    )
+)
+```
+
+**Search.**
+
+```js
+fuse.search('apple', { limit: 5 })
+```
+
+```swift
+fuse.search("apple", limit: 5)
+```
+
+**One-shot `Fuse.match`.**
+
+```js
+Fuse.match('apple', 'apple pie', { includeMatches: true })
+```
+
+```swift
+Fuse.match("apple", in: "apple pie", options: FuseMatchOptions(includeMatches: true))
+```
+
+## Limitations vs fuse.js
+
+v1 omits three features. All return as additive (non-breaking) surface in v1.1.
+
+| Feature | Status | Notes |
 |---|---|---|
-| _TBD_ | | |
+| Extended search (`useExtendedSearch`) | v1.1 | Token operators (`'foo`, `^foo`, `!foo`, `foo$`, etc.). |
+| Logical search (`$and` / `$or` trees) | v1.1 | Comes with the query parser. |
+| Token search (`useTokenSearch` / TF-IDF) | v1.1 | Configurable tokenizer landed upstream in May 2026; v1.1 will track that surface. |
+
+A few smaller v1 limitations worth knowing:
+
+- **No `BigInt` scalar coercion.** Swift has no native `BigInt`; documented out-of-scope. Upstream tests that hit BigInt paths are explicitly `XCTSkip`-ed in the parity oracle.
+- **Match indices are in transformed-text UTF-16 space.** When `ignoreDiacritics` and / or case-folding apply, indices refer to the post-transform string, not the original. fuse.js does the same; the v1 surface does not include a `Range<String.Index>` round-trip back to the original text. A helper for the case-sensitive / no-diacritics combination can land in v1.x without breaking the offset contract.
+- **`Fuse.Search` is not `Sendable`.** Mutable index state + synchronous API. Wrap in an actor or a `Task` if you need cross-isolation use. The result types and `FuseOptions<Element>` (when `Element: Sendable`) are `Sendable`.
+
+## Version compatibility
+
+| fuse-swift | fuse.js | Notes |
+|---|---|---|
+| 2.0.0 _(rc.1 pending)_ | 7.4.0-beta.5 | First official-port release. |
+
+Each fuse.js release triggers a `chore(sync): fuse-js vX.Y.Z` PR. The cross-runtime parity check (`scripts/parity-check.sh`) gates the release tag.
 
 ## Migrating from `krisk/fuse-swift` 1.x
 
-The 1.x line is frozen on the `legacy` branch. See [`docs/MIGRATION.md`](docs/MIGRATION.md) for the branch story and upgrade path.
+The 1.x line is the original (archived) `krisk/fuse-swift` codebase by Evgeny Mikhaylov. It is preserved on the `legacy` branch — every commit hash and tag intact — and the `master` branch is frozen as a tombstone for SPM consumers who pinned `.branch("master")`. The official Swift port lives on `main`. See [`docs/MIGRATION.md`](docs/MIGRATION.md) for the upgrade path.
 
-## fuse.js → fuse-swift cheat sheet
+## Examples
 
-See [`docs/MIGRATION.md`](docs/MIGRATION.md).
+A runnable CLI demo lives at [`Examples/CLI/`](Examples/CLI/) and exercises both string-list and keyed object search. From a checkout:
+
+```
+cd Examples/CLI
+swift run FuseCLI            # default queries
+swift run FuseCLI "stve"     # custom query against both fixtures
+```
+
+## Syncing with upstream
+
+[`docs/SYNC.md`](docs/SYNC.md) documents the sync procedure with a worked example.
+
+## Release gate
+
+The release gate runs strict-concurrency tests plus the cross-runtime parity check against `../fuse-js`:
+
+```
+make release
+```
+
+Set `FUSE_JS_PATH` to override the default sibling-checkout location.
 
 ## Contributing
 
-See `CONTRIBUTING.md`.
+`CONTRIBUTING.md` and `CODE_OF_CONDUCT.md` will land alongside the first public tag.
 
 ## License
 
-TBD. See `LICENSE` once added.
+License selection is pending. Will be added before the first public tag.
