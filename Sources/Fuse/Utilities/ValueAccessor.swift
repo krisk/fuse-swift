@@ -73,11 +73,17 @@ enum ValueAccessor {
     ) {
         if case .null = node { return }
 
-        // Terminal: no path left, scalar pushes; non-scalar intermediate
-        // objects are dropped (matches the upstream `_createObjectRecord`
-        // filter that ignores non-{v,i} array items).
+        // Terminal: no path left. `arr == true` means we walked into an array
+        // somewhere on the way down; per upstream `_createObjectRecord` lines
+        // 212-220, each array element is JS-stringified (`toString(item.v)`)
+        // including objects → `[object Object]` and nested arrays → `1,2`.
+        // `arr == false` means a top-level non-array lookup landed on a
+        // non-scalar; upstream's _createObjectRecord only handles `isArray`
+        // and `isString` branches at that level, so non-scalars are dropped.
         if index >= path.count {
-            if let s = scalarString(node) {
+            if arr {
+                list.append((value: jsString(node), arrayIndex: arrayIndex))
+            } else if let s = scalarString(node) {
                 list.append((value: s, arrayIndex: arrayIndex))
             }
             return
@@ -110,6 +116,27 @@ enum ValueAccessor {
         case .int(let i): return Trim.toString(Int(i))
         case .double(let d): return Trim.toString(d)
         case .null, .array, .object: return nil
+        }
+    }
+
+    /// JS-style stringification for terminal items pushed from inside an
+    /// array traversal. Mirrors `baseToString(item.v)` + the
+    /// `value + ''` coercion JS applies for object / array values.
+    private static func jsString(_ node: JSONValue) -> String {
+        switch node {
+        case .null: return ""
+        case .string(let s): return s
+        case .bool(let b): return Trim.toString(b)
+        case .int(let i): return Trim.toString(Int(i))
+        case .double(let d): return Trim.toString(d)
+        case .object: return "[object Object]"
+        case .array(let items):
+            // JS `Array.prototype.toString` joins with "," and renders
+            // null / undefined elements as empty strings.
+            return items.map { item -> String in
+                if case .null = item { return "" }
+                return jsString(item)
+            }.joined(separator: ",")
         }
     }
 }

@@ -31,10 +31,9 @@ public enum Fuse {
     /// Mirrors `Fuse.parseIndex` at `../fuse-js/src/tools/FuseIndex.ts:263-275`.
     ///
     /// Live accessors are **not** rebound here — the parsed index has no
-    /// accessor binding. The caller passes this index to
-    /// `Fuse.Search(_:options:index:)` (lands in phase 8), which binds
-    /// `options.keys` accessors by serialized-identity matching per the
-    /// rehydration contract in the plan (Reviewer Question 1).
+    /// accessor binding. Callers pass this index to
+    /// `Fuse.Search(_:options:index:)`, which validates keys-shape parity
+    /// against the user-supplied `options.keys` per Reviewer Question 1.
     public static func parseIndex<Element>(
         _ data: Data,
         options: FuseIndexOptions<Element> = FuseIndexOptions<Element>()
@@ -55,30 +54,39 @@ public enum Fuse {
 
 extension Fuse {
     /// Generic searcher. v1 supports `Fuse.Search<String>` for string-array
-    /// search (this phase) and `Fuse.Search<Element>` for keyed object search
-    /// (lands in phase 8). The class is intentionally non-`Sendable`; it owns
-    /// mutable state and uses synchronous methods. See plan section
-    /// "Sendable scope".
+    /// search and `Fuse.Search<Element>` for keyed object search (phase 8).
+    /// The class is intentionally non-`Sendable`; it owns mutable index
+    /// state and uses synchronous methods. See plan section "Sendable scope".
     public final class Search<Element> {
         private let docs: [Element]
         private let options: FuseOptions<Element>
-        // Per-doc field-length norm for the string-array path; nil entries
-        // correspond to blank docs that are excluded from indexed records.
-        private let stringNorms: [Double?]
+        private let myIndex: FuseIndex<Element>
 
-        public init(_ docs: [Element], options: FuseOptions<Element>) throws {
+        /// Construct a searcher over `docs`. When `index` is supplied, it is
+        /// copy-on-adopted (per Reviewer Question 1's contract: the user's
+        /// instance is never mutated by the searcher's lifecycle) and used
+        /// in place of building a fresh one. `options.keys` shape must match
+        /// the supplied index's keys (count + id + src + weight per slot).
+        public init(
+            _ docs: [Element],
+            options: FuseOptions<Element>,
+            index: FuseIndex<Element>? = nil
+        ) throws {
             self.docs = docs
             self.options = options
 
-            if Element.self == String.self {
-                let normer = FieldNorm(weight: options.fieldNormWeight)
-                self.stringNorms = docs.map { doc -> Double? in
-                    let s = doc as! String
-                    return Trim.isBlank(s) ? nil : normer.get(s)
-                }
+            if let provided = index {
+                try Search.validateSuppliedIndex(provided, against: options.keys)
+                self.myIndex = provided.copy()
             } else {
-                // Phase 8 will populate this branch via FuseIndex.
-                self.stringNorms = Array(repeating: nil, count: docs.count)
+                let built = FuseIndex<Element>(
+                    keys: options.keys,
+                    getFn: options.getFn,
+                    fieldNormWeight: options.fieldNormWeight
+                )
+                built.setSources(docs)
+                try built.create()
+                self.myIndex = built
             }
         }
 
@@ -99,47 +107,29 @@ extension Fuse {
                 return results
             }
 
-            guard Element.self == String.self else {
-                // Object collections are not supported until phase 8.
-                return []
-            }
+            let searcher = BitapSearch(pattern: pattern, options: bitapOptions())
 
-            let bitapOptions = BitapSearchOptions(
-                location: options.location,
-                distance: options.distance,
-                threshold: options.threshold,
-                findAllMatches: options.findAllMatches,
-                minMatchCharLength: options.minMatchCharLength,
-                includeMatches: options.includeMatches,
-                ignoreLocation: options.ignoreLocation,
-                isCaseSensitive: options.isCaseSensitive,
-                ignoreDiacritics: options.ignoreDiacritics
-            )
-            let searcher = BitapSearch(pattern: pattern, options: bitapOptions)
-
-            // Internal collection of pre-format results.
-            var internalResults: [InternalStringResult<Element>] = []
-            for (idx, doc) in docs.enumerated() {
-                let text = doc as! String
-                if Trim.isBlank(text) { continue }
-                let bitapResult = searcher.searchIn(text: text)
-                if !bitapResult.isMatch { continue }
-
-                let norm = stringNorms[idx] ?? 1.0
-                let finalScore = ComputeScore.compute(
-                    matches: [.init(score: bitapResult.score, norm: norm, weight: 1.0)],
-                    ignoreFieldNorm: options.ignoreFieldNorm
-                )
-
-                internalResults.append(InternalStringResult(
-                    item: doc,
-                    refIndex: idx,
-                    finalScore: finalScore,
-                    bitapScore: bitapResult.score,
-                    norm: norm,
-                    value: text,
-                    indices: bitapResult.indices
-                ))
+            var internalResults: [InternalResult<Element>] = []
+            for record in myIndex.records {
+                switch record.kind {
+                case .stringRecord(let value, let norm):
+                    if let r = searchStringRecord(
+                        value: value,
+                        norm: norm,
+                        docIndex: record.i,
+                        searcher: searcher
+                    ) {
+                        internalResults.append(r)
+                    }
+                case .objectRecord(let entries):
+                    if let r = searchObjectRecord(
+                        entries: entries,
+                        docIndex: record.i,
+                        searcher: searcher
+                    ) {
+                        internalResults.append(r)
+                    }
+                }
             }
 
             if options.shouldSort {
@@ -162,12 +152,15 @@ extension Fuse {
             return internalResults.map { r in
                 var matches: [FuseMatch]? = nil
                 if options.includeMatches {
-                    matches = [FuseMatch(
-                        indices: r.indices ?? [],
-                        key: nil,
-                        refIndex: nil,
-                        value: r.value
-                    )]
+                    matches = r.matches.compactMap { m in
+                        guard let idx = m.indices, !idx.isEmpty else { return nil }
+                        return FuseMatch(
+                            indices: idx,
+                            key: m.key,
+                            refIndex: m.refIndex,
+                            value: m.value
+                        )
+                    }
                 }
                 return FuseResult<Element>(
                     item: r.item,
@@ -177,32 +170,187 @@ extension Fuse {
                 )
             }
         }
+
+        // ── helpers ───────────────────────────────────────────────────────
+
+        private func bitapOptions() -> BitapSearchOptions {
+            BitapSearchOptions(
+                location: options.location,
+                distance: options.distance,
+                threshold: options.threshold,
+                findAllMatches: options.findAllMatches,
+                minMatchCharLength: options.minMatchCharLength,
+                includeMatches: options.includeMatches,
+                ignoreLocation: options.ignoreLocation,
+                isCaseSensitive: options.isCaseSensitive,
+                ignoreDiacritics: options.ignoreDiacritics
+            )
+        }
+
+        private func searchStringRecord(
+            value: String,
+            norm: Double,
+            docIndex: Int,
+            searcher: BitapSearch
+        ) -> InternalResult<Element>? {
+            let r = searcher.searchIn(text: value)
+            if !r.isMatch { return nil }
+            let scoreInput = ComputeScore.MatchInput(score: r.score, norm: norm, weight: 1.0)
+            let finalScore = ComputeScore.compute(
+                matches: [scoreInput],
+                ignoreFieldNorm: options.ignoreFieldNorm
+            )
+            let match = InternalMatch(
+                score: r.score,
+                value: value,
+                indices: r.indices,
+                key: nil,
+                refIndex: nil,
+                norm: norm,
+                weight: 1.0
+            )
+            return InternalResult(
+                item: docs[docIndex],
+                refIndex: docIndex,
+                finalScore: finalScore,
+                matches: [match]
+            )
+        }
+
+        private func searchObjectRecord(
+            entries: [Int: IndexEntry],
+            docIndex: Int,
+            searcher: BitapSearch
+        ) -> InternalResult<Element>? {
+            var matches: [InternalMatch] = []
+            var scoreInputs: [ComputeScore.MatchInput] = []
+
+            for (slot, key) in options.keys.enumerated() {
+                guard let entry = entries[slot] else { continue }
+                switch entry {
+                case .single(let sub):
+                    let r = searcher.searchIn(text: sub.value)
+                    if !r.isMatch { continue }
+                    matches.append(InternalMatch(
+                        score: r.score,
+                        value: sub.value,
+                        indices: r.indices,
+                        key: key.source,
+                        refIndex: nil,
+                        norm: sub.norm,
+                        weight: key.weight
+                    ))
+                    scoreInputs.append(.init(
+                        score: r.score,
+                        norm: sub.norm,
+                        weight: key.weight
+                    ))
+                case .multiple(let arr):
+                    for sub in arr {
+                        let r = searcher.searchIn(text: sub.value)
+                        if !r.isMatch { continue }
+                        matches.append(InternalMatch(
+                            score: r.score,
+                            value: sub.value,
+                            indices: r.indices,
+                            key: key.source,
+                            refIndex: sub.arrayIndex,
+                            norm: sub.norm,
+                            weight: key.weight
+                        ))
+                        scoreInputs.append(.init(
+                            score: r.score,
+                            norm: sub.norm,
+                            weight: key.weight
+                        ))
+                    }
+                }
+            }
+
+            if matches.isEmpty { return nil }
+            let finalScore = ComputeScore.compute(
+                matches: scoreInputs,
+                ignoreFieldNorm: options.ignoreFieldNorm
+            )
+            return InternalResult(
+                item: docs[docIndex],
+                refIndex: docIndex,
+                finalScore: finalScore,
+                matches: matches
+            )
+        }
+
+        /// Compare `options.keys` to the supplied index's stored keys for
+        /// `(count, id, src, weight)` parity. Mismatch throws so a user
+        /// can't silently feed the wrong index into a searcher whose options
+        /// describe a different schema. See plan's Reviewer Question 1.
+        private static func validateSuppliedIndex(
+            _ index: FuseIndex<Element>,
+            against optionsKeys: [FuseKey<Element>]
+        ) throws {
+            let parsed = index.keyStore.keys
+            if parsed.count != optionsKeys.count {
+                throw FuseError.parsedIndexKeyMismatch(
+                    .countMismatch(parsed: parsed.count, options: optionsKeys.count)
+                )
+            }
+            for (slot, (p, o)) in zip(parsed, optionsKeys).enumerated() {
+                let pid = KeyStore<Element>.keyId(for: p.source)
+                let oid = KeyStore<Element>.keyId(for: o.source)
+                if pid != oid {
+                    throw FuseError.parsedIndexKeyMismatch(
+                        .idMismatch(slot: slot, parsed: pid, options: oid)
+                    )
+                }
+                if p.source != o.source {
+                    throw FuseError.parsedIndexKeyMismatch(
+                        .sourceShapeMismatch(slot: slot, parsed: p.source, options: o.source)
+                    )
+                }
+                if abs(p.weight - o.weight) > 1e-12 {
+                    throw FuseError.parsedIndexKeyMismatch(
+                        .weightMismatch(slot: slot, parsed: p.weight, options: o.weight)
+                    )
+                }
+            }
+        }
     }
 }
 
-/// Internal pre-format record for a string-list match. Phase 7+ will replace
-/// this with `FuseIndex<Element>` + a generic `InternalResult`.
-private struct InternalStringResult<Element> {
+/// Internal pre-format result: the unsorted, unformatted matches collected
+/// for one document. Translates to a `FuseResult` at the end of `search`.
+private struct InternalResult<Element> {
     let item: Element
     let refIndex: Int
     let finalScore: Double
-    let bitapScore: Double
-    let norm: Double
-    let value: String
-    let indices: [FuseRange]?
+    let matches: [InternalMatch]
 
     func sortItem() -> FuseSortItem<Element> {
-        let m = FuseSortMatch(
-            key: nil,
-            value: value,
-            score: bitapScore,
-            indices: indices
-        )
+        let sortMatches = matches.map { m in
+            FuseSortMatch(
+                key: m.key,
+                value: m.value,
+                score: m.score,
+                indices: m.indices
+            )
+        }
         return FuseSortItem(
             item: item,
             refIndex: refIndex,
             score: finalScore,
-            matches: [m]
+            matches: sortMatches
         )
     }
+}
+
+/// Internal per-match record. `key` is nil for string-list matches; `refIndex`
+/// is nil for non-array entries.
+private struct InternalMatch {
+    let score: Double
+    let value: String
+    let indices: [FuseRange]?
+    let key: KeySource?
+    let refIndex: Int?
+    let norm: Double
+    let weight: Double
 }
