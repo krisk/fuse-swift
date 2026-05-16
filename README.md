@@ -253,7 +253,55 @@ A few smaller v1 limitations worth knowing:
 
 - **No `BigInt` scalar coercion.** Swift has no native `BigInt`; documented out-of-scope. Upstream tests that hit BigInt paths are explicitly `XCTSkip`-ed in the parity oracle.
 - **Match indices are in transformed-text UTF-16 space.** When `ignoreDiacritics` and / or case-folding apply, indices refer to the post-transform string, not the original. fuse.js does the same; the v1 surface does not include a `Range<String.Index>` round-trip back to the original text. A helper for the case-sensitive / no-diacritics combination can land in v1.x without breaking the offset contract.
-- **`Fuse.Search` is not `Sendable`.** Mutable index state + synchronous API. Wrap in an actor or a `Task` if you need cross-isolation use. The result types and `FuseOptions<Element>` (when `Element: Sendable`) are `Sendable`.
+- **`Fuse.Search` is not `Sendable`.** Mutable index state + synchronous API. The result types and `FuseOptions<Element>` (when `Element: Sendable`) *are* `Sendable`, so input and output cross isolation cleanly; only the searcher instance is single-isolation. See the [Concurrency](#concurrency) section below for the canonical patterns.
+
+## Concurrency
+
+`Fuse.Search` is intentionally non-`Sendable` (mutable index + sync API). `FuseOptions`, `FuseResult`, and `FuseMatch` are `Sendable` (when `Element: Sendable`), so getting data into and out of a searcher across isolation boundaries is fine — only the searcher itself stays put.
+
+**Repeated searches on a long-lived corpus → wrap in an actor.** The canonical pattern. The actor's isolation guarantees serial access to the non-`Sendable` searcher.
+
+```swift
+actor BookSearchService {
+    private let fuse: Fuse.Search<Book>
+
+    init(books: [Book]) throws {
+        self.fuse = try Fuse.Search<Book>(
+            books,
+            options: try FuseOptions<Book>(
+                includeScore: true,
+                // .path form avoids capturing a non-Sendable KeyPath
+                // across the actor's isolation boundary (Swift 6).
+                keys: [try FuseKey<Book>(path: "title")]
+            )
+        )
+    }
+
+    func search(_ query: String) -> [FuseResult<Book>] {
+        fuse.search(query)
+    }
+}
+
+let service = try BookSearchService(books: books)
+let results = await service.search("stve")  // hops off the caller's isolation
+```
+
+**Ad-hoc one-shot search → build inside `Task.detached`.** Use this when the collection changes between calls or search frequency is low enough that index construction cost is acceptable.
+
+```swift
+let docs: [String] = ["apple", "orange", "banana"]
+let opts = try FuseOptions<String>(includeScore: true)
+let query = "ange"
+
+let results = try await Task.detached(priority: .userInitiated) {
+    let fuse = try Fuse.Search<String>(docs, options: opts)
+    return fuse.search(query)
+}.value
+```
+
+The index is rebuilt per call. For repeated searches over a stable corpus, the actor pattern above pays for itself after the second call.
+
+**Legacy GCD codebases.** `Fuse.Search` works behind `DispatchQueue.global().async` as long as the calling code already guarantees no concurrent access (typically: the searcher is touched only from a single serial queue). Under `-strict-concurrency=complete` the compiler will require one of the patterns above instead.
 
 ## Version compatibility
 
