@@ -265,7 +265,7 @@ Each fuse.js release triggers a `chore(sync): fuse-js vX.Y.Z` PR. The cross-runt
 
 ## Migrating from `krisk/fuse-swift` 1.x
 
-The 1.x line is the original (archived) `krisk/fuse-swift` codebase by Evgeny Mikhaylov. It is preserved on the `legacy` branch — every commit hash and tag intact — and the `master` branch is frozen as a tombstone for SPM consumers who pinned `.branch("master")`. The official Swift port lives on `main`. See [`docs/MIGRATION.md`](docs/MIGRATION.md) for the upgrade path.
+The 1.x line is the previous `krisk/fuse-swift` codebase (top tag 1.4.0). It is preserved on the `legacy` branch — every commit hash and tag intact — and the `master` branch is frozen as a tombstone for SPM consumers who pinned `.branch("master")`. The official-port rewrite lives on `main`. See [`docs/MIGRATION.md`](docs/MIGRATION.md) for the upgrade path.
 
 ## Examples
 
