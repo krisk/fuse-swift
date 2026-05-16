@@ -1,9 +1,9 @@
 # Cross-runtime parity harness
 
-This directory holds the release-gate parity check described in PLAN.md
-Edge Cases #7. It runs a fixed query battery on both fuse-js and
-fuse-swift, canonicalizes the outputs into a shared comparison shape,
-and asserts equality. Failure of this check blocks `make release`.
+This directory holds the release-gate parity check. It runs a fixed
+query battery on both fuse-js and fuse-swift, canonicalizes the
+outputs into a shared comparison shape, and asserts equality. Failure
+of this check blocks `make release`.
 
 ## Layout
 

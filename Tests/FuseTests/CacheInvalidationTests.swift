@@ -1,18 +1,18 @@
 import XCTest
 @testable import Fuse
 
-/// Phase-10 internal-behavior parity port of
+/// Internal-behavior parity port of
 /// `../fuse-js/test/cache-invalidation.test.js`. Token-search cases at
-/// upstream lines 13-16 don't apply in v1 (`useTokenSearch` deferred to
-/// v1.1 per decision 6); the surviving non-token cache invariant is
+/// upstream lines 13-16 don't apply in v1 (`useTokenSearch` is not in
+/// the v1 surface); the surviving non-token cache invariant is
 /// load-bearing for parity and is asserted directly.
 ///
 /// **Cache identity** is exposed via the internal `cachedSearcher`
 /// property on `Fuse.Search`; cache hits return the same `BitapSearch`
 /// class instance (`===`), invalidation sets it back to nil.
 ///
-/// **Plan invariant**: `remove(predicate:)` with no matching docs must
-/// NOT invalidate the cache. Upstream gates this inside
+/// **Load-bearing invariant**: `remove(predicate:)` with no matching
+/// docs must NOT invalidate the cache. Upstream gates this inside
 /// `if (indicesToRemove.length)` at `../fuse-js/src/core/index.ts:169`.
 final class CacheInvalidationTests: XCTestCase {
 

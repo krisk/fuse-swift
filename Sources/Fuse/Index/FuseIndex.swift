@@ -6,9 +6,9 @@ import Foundation
 /// Public surface is intentionally narrow: `size()`,
 /// `getEntry(at:keyId:)`, and `toJSON()`. Mutators (`add`, `removeAt`,
 /// `removeAll`) are `internal` — the only correct path for mutation is
-/// through `Fuse.Search<Element>`, which knows how to bind live
-/// `FuseOptions.keys` accessors after `parseIndex` (see Reviewer Question 1
-/// in the plan).
+/// through `Fuse.Search<Element>`, which keeps `docs` / `records` /
+/// the searcher cache in sync and validates keys-shape parity when a
+/// prebuilt index is adopted via `init(_:options:index:)`.
 ///
 /// **Not `Sendable`.** Mutable class state. Cross-isolation transfer
 /// happens via `toJSON()` + `Fuse.parseIndex(_:)`.
@@ -99,8 +99,10 @@ public final class FuseIndex<Element> {
     /// Doc-index-canonical removal. Removes the record matching `idx` (if
     /// any — blank-string indices have no record) and decrements every
     /// surviving record's `i` that was strictly greater than `idx`.
-    /// Mirrors `FuseIndex.removeAt` at upstream lines 106-127 (post-#0b8e3ca2
-    /// fix); see Reviewer Question 1 for the doc-index-canonical contract.
+    /// Mirrors `FuseIndex.removeAt` at upstream lines 106-127, post the
+    /// `0b8e3ca2` fix that made `idx` a doc-index (rather than a
+    /// records-array slot) so it composes correctly with `add` /
+    /// `removeAll` when blank-string docs are present.
     func removeAt(_ idx: Int) throws {
         guard idx >= 0 else {
             throw FuseError.invalidDocIndex(idx: idx)
@@ -143,11 +145,12 @@ public final class FuseIndex<Element> {
         }
     }
 
-    /// Returns the entry at `keyId` for the `slot`-th record, or `nil` if
-    /// the key is absent on that record. Mirrors upstream
-    /// `getValueForItemAtKeyId` semantics in spirit (slot rather than item-
-    /// pointer; the keyed-search caller in phase 8 has the slot index
-    /// already from its iteration). Returns `nil` for string records.
+    /// Returns the entry at `keyId` for the `slot`-th record, or `nil`
+    /// if the key is absent on that record. Mirrors upstream
+    /// `getValueForItemAtKeyId` semantics in spirit (slot rather than
+    /// item-pointer; the keyed-search caller in `Fuse.Search` has the
+    /// slot index already from its iteration). Returns `nil` for string
+    /// records.
     func entry(atRecordSlot slot: Int, keyId: String) -> IndexEntry? {
         guard slot >= 0, slot < records.count else { return nil }
         guard case .objectRecord(let entries) = records[slot].kind else { return nil }
@@ -155,10 +158,11 @@ public final class FuseIndex<Element> {
         return entries[keySlot]
     }
 
-    /// Deep copy for the copy-on-adopt rehydration path described in
-    /// Reviewer Question 1: when `Fuse.Search<Element>.init(_:options:index:)`
-    /// receives a supplied index, the copy ensures the user's original
-    /// instance is never mutated by the new searcher's lifecycle.
+    /// Deep copy for the copy-on-adopt path used by
+    /// `Fuse.Search<Element>.init(_:options:index:)`. When a user supplies
+    /// a prebuilt index to a new searcher, the copy ensures the user's
+    /// original `FuseIndex` instance is never mutated by the new
+    /// searcher's lifecycle (add / removeAt / removeAll / setCollection).
     func copy() -> FuseIndex<Element> {
         let dup = FuseIndex<Element>(
             keys: keyStore.keys,
@@ -172,8 +176,10 @@ public final class FuseIndex<Element> {
 
     // ── JSON serialization ────────────────────────────────────────────
 
-    /// Emit the index as JSON `Data` with shape parity with fuse-js. See
-    /// Edge Cases #7 for the parity contract.
+    /// Emit the index as JSON `Data` with shape parity with fuse-js
+    /// (`{keys, records}` at the top level; per-record shape mirrors
+    /// `../fuse-js/src/types.ts:80-114`). The cross-runtime parity
+    /// harness at `scripts/parity-check.sh` exercises round-tripping.
     public func toJSON() throws -> Data {
         let payload = SerializedIndex(
             keys: keyStore.serialized(),

@@ -1,10 +1,11 @@
 import XCTest
 @testable import Fuse
 
-/// Phase-4 tests for the low-level Bitap search function. The full
-/// fuzzy-search.test.js parity oracle (string-array search via the `Fuse`
-/// class) lands in phase 6 once the Fuse instance exists. These tests
-/// exercise the single-chunk algorithm directly.
+/// Unit tests for the low-level single-chunk Bitap function. The full
+/// fuzzy-search.test.js parity oracle lives in `BitapFuzzyTests.swift`
+/// and `KeyedSearchTests.swift` (string-array and keyed scenarios);
+/// these tests exercise the single-chunk algorithm directly without
+/// going through `Fuse.Search`.
 final class BitapCoreTests: XCTestCase {
     /// Helper that wraps the UTF-16-array boilerplate for the standalone search.
     private func bitap(

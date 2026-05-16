@@ -7,8 +7,10 @@ import Foundation
 /// `Element` must conform to `Encodable` for the default walker — checked
 /// at runtime via `Element.self as? any Encodable.Type`. Non-`Encodable`
 /// elements get a `FuseError.pathRequiresEncodableOrGetFn` at index-build
-/// time. Per Edge Cases #1, the path follows **encoded JSON names** (i.e.
-/// `CodingKeys` remapping is honored), not Swift property names.
+/// time. The path follows **encoded JSON names** (i.e. `CodingKeys`
+/// remapping is honored), not Swift property names — `"author.first_name"`
+/// resolves when `CodingKeys` declares the snake-case form; the Swift
+/// name `firstName` does not.
 ///
 /// JSON-tree representation uses `JSONValue` to preserve type discrimination
 /// across the encode/decode round-trip (especially Bool, which `NSNumber`

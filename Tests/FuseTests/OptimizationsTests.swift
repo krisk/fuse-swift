@@ -1,11 +1,12 @@
 import XCTest
 @testable import Fuse
 
-/// Phase-10 parity port of `../fuse-js/test/optimizations.test.js`.
-/// Covers the limit-based MaxHeap top-K path, batch remove, the searcher
-/// cache, and the explicit `Fuse.use()` XCTSkip per decision 5.
+/// Parity port of `../fuse-js/test/optimizations.test.js`. Covers the
+/// limit-based MaxHeap top-K path, batch remove, the searcher cache,
+/// and an explicit `Fuse.use()` XCTSkip.
 ///
-/// `Fuse.use()` is dropped from v1; the upstream suite at lines 144-169
+/// `Fuse.use()` is not in the v1 surface (fuse-swift doesn't expose a
+/// plugin-registration mechanism); the upstream suite at lines 144-169
 /// is parked behind XCTSkip with a documented reason so the gap is
 /// auditable.
 final class OptimizationsTests: XCTestCase {
@@ -164,11 +165,11 @@ final class OptimizationsTests: XCTestCase {
         XCTAssertEqual(after.count, 0)
     }
 
-    // ── Fuse.use() — dropped per decision 5 ───────────────────────────
+    // ── Fuse.use() — not in v1 surface ────────────────────────────────
 
     func testFuseUseRegistersCustomSearcherPlugin() throws {
         // Upstream optimizations.test.js:144-169.
-        throw XCTSkip("Fuse.use dropped per decision 5")
+        throw XCTSkip("Fuse.use is not in the v1 surface (no plugin-registration mechanism)")
     }
 
     // ── Searcher cache (lines 174-210) ────────────────────────────────

@@ -151,9 +151,10 @@ public struct FuseKey<Element>: Sendable {
 
     /// Rehydration init for `Fuse.parseIndex`: reconstructs a `FuseKey`
     /// from the serialized JSON shape. The accessor is set to `.path` —
-    /// no live binding is created here. Phase 8's `Fuse.Search` init then
-    /// matches these slots against user-supplied `options.keys` by
-    /// `(id, src, weight)` to bind live accessors (Reviewer Question 1).
+    /// no live binding is created here. `Fuse.Search.init(_:options:index:)`
+    /// then matches these slots against user-supplied `options.keys` by
+    /// `(id, src, weight)` to verify schema parity before adopting the
+    /// prebuilt records.
     init(rehydratedFrom serialized: SerializedKey) throws {
         guard serialized.weight > 0 else {
             throw FuseError.invalidKeyWeight(

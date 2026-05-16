@@ -2,9 +2,10 @@ import Foundation
 
 /// `Fuse` is a namespace enum holding both the generic searcher type
 /// (`Fuse.Search<Element>`) and the static helpers (`Fuse.version`, etc.).
-/// See plan section "Public API namespace shape" for the rationale (Swift
-/// generic classes can't host both an instance API and statics without
-/// forcing callers to specialize a type parameter the statics don't use).
+/// Swift generic classes can't host both an instance API and statics
+/// without forcing callers to specialize a type parameter the statics
+/// don't use, so the public surface splits across `Fuse.Search<Element>`
+/// (generic instance API) and `Fuse.*` (non-generic statics).
 public enum Fuse {
     public static let version: String = "2.0.0-dev"
 
@@ -69,7 +70,8 @@ public enum Fuse {
     /// Live accessors are **not** rebound here — the parsed index has no
     /// accessor binding. Callers pass this index to
     /// `Fuse.Search(_:options:index:)`, which validates keys-shape parity
-    /// against the user-supplied `options.keys` per Reviewer Question 1.
+    /// against the user-supplied `options.keys` (count + id + src +
+    /// weight per slot) before adopting the prebuilt records.
     public static func parseIndex<Element>(
         _ data: Data,
         options: FuseIndexOptions<Element> = FuseIndexOptions<Element>()
@@ -89,10 +91,11 @@ public enum Fuse {
 }
 
 extension Fuse {
-    /// Generic searcher. v1 supports `Fuse.Search<String>` for string-array
+    /// Generic searcher. Supports `Fuse.Search<String>` for string-array
     /// search and `Fuse.Search<Element>` for keyed object search. The class
-    /// is intentionally non-`Sendable`; it owns mutable index / cache state
-    /// and uses synchronous methods. See plan section "Sendable scope".
+    /// is intentionally non-`Sendable` — it owns mutable index / cache
+    /// state and uses synchronous methods. See `docs/CONCURRENCY.md` for
+    /// the actor / `Task.detached` patterns that compose around it.
     public final class Search<Element> {
         private var docs: [Element]
         private let options: FuseOptions<Element>
@@ -107,10 +110,11 @@ extension Fuse {
         var cachedSearcher: BitapSearch?
 
         /// Construct a searcher over `docs`. When `index` is supplied, it is
-        /// copy-on-adopted (per Reviewer Question 1's contract: the user's
-        /// instance is never mutated by the searcher's lifecycle) and used
-        /// in place of building a fresh one. `options.keys` shape must match
-        /// the supplied index's keys (count + id + src + weight per slot).
+        /// copy-on-adopted so the user's `FuseIndex` instance is never
+        /// mutated by the searcher's lifecycle, and used in place of
+        /// building a fresh one. `options.keys` shape must match the
+        /// supplied index's keys (count + id + src + weight per slot);
+        /// mismatches throw `FuseError.parsedIndexKeyMismatch`.
         public init(
             _ docs: [Element],
             options: FuseOptions<Element>,
@@ -181,10 +185,10 @@ extension Fuse {
 
         // ── mutators (synchronized docs / index / cache) ──────────────────
 
-        /// Append `doc` to the collection. Atomic per Edge Cases #1:
-        /// `myIndex.add` runs first; `docs` and the cache are only updated
-        /// after the index succeeds. On `pathEncodingFailed`, every
-        /// observable property is identical to its pre-call state.
+        /// Append `doc` to the collection. Atomic: `myIndex.add` runs
+        /// first; `docs` and the cache are only updated after the index
+        /// succeeds. On `pathEncodingFailed`, every observable property is
+        /// identical to its pre-call state.
         ///
         /// Cache always invalidates on success (parity with upstream
         /// `../fuse-js/src/core/index.ts:130-156`).
@@ -199,9 +203,8 @@ extension Fuse {
         ///
         /// **No-op invariant**: when the predicate matches zero docs, the
         /// searcher cache is NOT invalidated (upstream gates invalidation
-        /// inside `if (indicesToRemove.length)`). Tests at upstream
-        /// `cache-invalidation.test.js:50` exercise this; the plan calls
-        /// it out explicitly as a load-bearing invariant.
+        /// inside `if (indicesToRemove.length)`). Load-bearing for the
+        /// parity test at `../fuse-js/test/cache-invalidation.test.js:50`.
         @discardableResult
         public func remove(_ predicate: (Element, Int) -> Bool = { _, _ in false }) -> [Element] {
             var removed: [Element] = []
@@ -235,10 +238,11 @@ extension Fuse {
             return doc
         }
 
-        /// Replace the entire collection. Atomic per Edge Cases #1: the
-        /// replacement index is built / validated in a local first; the
-        /// instance's docs / index / cache are only swapped after the new
-        /// index is fully constructed.
+        /// Replace the entire collection. Atomic: the replacement index
+        /// is built / validated in a local first; the instance's docs /
+        /// index / cache are only swapped after the new index is fully
+        /// constructed. On failure, every observable property of the
+        /// instance is identical to its pre-call state.
         public func setCollection(_ docs: [Element], index: FuseIndex<Element>? = nil) throws {
             let newIndex: FuseIndex<Element>
             if let provided = index {
@@ -488,8 +492,8 @@ extension Fuse {
 
         /// Compare `options.keys` to the supplied index's stored keys for
         /// `(count, id, src, weight)` parity. Mismatch throws so a user
-        /// can't silently feed the wrong index into a searcher whose options
-        /// describe a different schema. See plan's Reviewer Question 1.
+        /// can't silently feed the wrong index into a searcher whose
+        /// options describe a different schema.
         private static func validateSuppliedIndex(
             _ index: FuseIndex<Element>,
             against optionsKeys: [FuseKey<Element>]

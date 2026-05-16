@@ -18,8 +18,9 @@ harness (`make release`).
 Two non-negotiable invariants:
 
 1. **No new 1.x tags ever.** The `legacy` / frozen-`master` branch
-   contract (PLAN.md decision 2) reserves the entire 1.x version space
-   against the archived code. Every sync ships under the v2.x line.
+   contract (see [`MIGRATION.md`](MIGRATION.md)) reserves the entire
+   1.x version space against the archived code. Every sync ships under
+   the v2.x line.
 2. **Parity is the bar.** A sync PR that breaks the cross-runtime
    parity check does not merge. Scoring divergences are bugs in the
    port, not differences-of-opinion to be documented.
@@ -77,9 +78,28 @@ fuse-swift. Set `FUSE_JS_PATH` to override if you keep it elsewhere.
    git diff $PREV..$NEXT -- src/
    ```
 
-   Use the file-map in `PLAN.md` ("Porting plan: file mapping" section)
-   to find the corresponding Swift file for each touched JS file. If a
-   diff touches a file with no mapping, decide whether it's user-visible.
+   The Swift layout mirrors the upstream `src/` tree with a few
+   directory renames:
+
+   | upstream `src/` | fuse-swift `Sources/Fuse/` |
+   |---|---|
+   | `src/search/bitap/*.ts` | `Search/Bitap/*.swift` |
+   | `src/tools/FuseIndex.ts` | `Index/FuseIndex.swift` (+ `IndexRecord.swift`, `SerializedIndex.swift`) |
+   | `src/tools/KeyStore.ts` | `Index/KeyStore.swift` |
+   | `src/tools/FieldNorm.ts` | `Index/FieldNorm.swift` |
+   | `src/tools/MaxHeap.ts` | `Utilities/MaxHeap.swift` |
+   | `src/core/computeScore.ts` | `Core/ComputeScore.swift` |
+   | `src/core/transformMatches.ts` | (inlined into `Fuse.search` formatting) |
+   | `src/core/index.ts` | `Fuse.swift` (`Fuse.Search<Element>`) |
+   | `src/helpers/get.ts` | `Utilities/ValueAccessor.swift` |
+   | `src/helpers/diacritics.ts` | `Utilities/Diacritics.swift` |
+   | `src/helpers/typeGuards.ts` | `Utilities/Trim.swift` (subset: `isBlank`, `toString`) |
+   | `src/helpers/mergeIndices.ts` | `Utilities/MergeIndices.swift` |
+   | `src/types.ts` | `Options.swift` / `Result.swift` (typed structs) |
+
+   If an upstream diff touches a file outside this map (e.g., a new
+   helper), decide whether the change is user-visible — internal helpers
+   may not need a Swift counterpart at all.
 
 4. **Start the sync branch in fuse-swift.**
 
@@ -218,9 +238,10 @@ too. Don't preserve the old name — sync diffs become harder to read
 when the symbol map drifts.
 
 **Upstream adds a new file under `src/`.** Add a corresponding Swift
-file in the matching directory. Update the file-map in `PLAN.md` if
-the new file is user-visible; for purely internal helpers, no plan
-update needed.
+file in the matching directory (per the file-map table above). If the
+new file is user-visible, add a new row to that table so the next
+sync's diff is unambiguous; for purely internal helpers, no map update
+needed.
 
 **Upstream adds a non-FuseOptions configuration knob** (e.g. via a
 private constructor argument). Decide whether it's worth surfacing in
@@ -245,13 +266,41 @@ search). Port the algorithmic skeleton in the sync PR but do not
 expose the public flag. The full surface lands in a separate
 fuse-swift v1.1 PR.
 
+## Test-suite mapping
+
+| upstream `test/` | fuse-swift `Tests/FuseTests/` |
+|---|---|
+| `fuzzy-search.test.js` (string-array cases) | `BitapFuzzyTests.swift` |
+| `fuzzy-search.test.js` (keyed cases) | `KeyedSearchTests.swift` |
+| `scoring.test.js` | `ScoringTests.swift` |
+| `match.test.js` | `MatchTests.swift` |
+| `indexing.test.js` | `IndexingTests.swift` (+ `AccessorSemanticsTests.swift`) |
+| `optimizations.test.js` | `OptimizationsTests.swift` (+ `SortingTests.swift`) |
+| `cache-invalidation.test.js` | `CacheInvalidationTests.swift` |
+| `extended-search.test.js` | not yet ported (extended search not in v1) |
+| `logical-search.test.js` | not yet ported (logical search not in v1) |
+| `token-search*.test.js`, `internals.test.ts` (token-internal) | not yet ported (token search not in v1) |
+| `workers.test.js`, `feature-flags.test.js`, `typings.test.ts` | not ported (n/a in Swift) |
+
+Within ported suites, the explicit skip list (cases that are
+intentionally `XCTSkip`-ed):
+
+- BigInt scalar / array cases — Swift has no native `BigInt`.
+- `useTokenSearch` cases — token search not in v1 surface.
+- `Fuse.use()` cases — fuse-swift exposes no plugin-registration
+  mechanism.
+- `indexing.test.js` key-scoped object-query assertions (e.g.
+  `fuse.search({ title: 'old man' })`) — query parser is not in v1
+  surface.
+
+Any new skip introduced by a sync requires a sentence in the sync PR
+description explaining why.
+
 ## References
 
-- `PLAN.md` — "Porting plan: file mapping" maps every fuse-js source
-  file to its Swift counterpart. Single source of truth for the
-  mapping.
-- `PLAN.md` — "Parity oracle: which JS tests become Swift tests"
-  defines the test-suite mapping and the explicit skip list.
-- `scripts/parity/README.md` — internals of the cross-runtime harness.
-- `README.md` — version-mapping table is the canonical pointer to the
-  currently-synced fuse-js version.
+- [`MIGRATION.md`](MIGRATION.md) — branch story and SPM consumer
+  migration paths for the v1.x → v2 cut.
+- [`scripts/parity/README.md`](../scripts/parity/README.md) — internals
+  of the cross-runtime parity harness.
+- [`README.md`](../README.md) — version-mapping table is the canonical
+  pointer to the currently-synced fuse-js version.

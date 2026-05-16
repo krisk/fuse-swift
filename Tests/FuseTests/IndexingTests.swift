@@ -1,10 +1,11 @@
 import XCTest
 @testable import Fuse
 
-/// Phase-7 tests for `FuseIndex`, `KeyStore`, and the default
-/// path-walker. The subset of `../fuse-js/test/indexing.test.js` that
-/// applies to index construction, lifecycle, and JSON round-trip; keyed-
-/// search behavior lands in phase 8.
+/// Tests for `FuseIndex`, `KeyStore`, and the default path-walker. The
+/// subset of `../fuse-js/test/indexing.test.js` that applies to index
+/// construction, lifecycle, and JSON round-trip; the keyed-search
+/// behavior the same upstream file exercises lives in
+/// `KeyedSearchTests.swift`.
 final class IndexingTests: XCTestCase {
     // ── KeyStore: path / id parity with createKeyPath/createKeyId ─────
 
@@ -190,7 +191,7 @@ final class IndexingTests: XCTestCase {
         XCTAssertEqual(index.size(), 1)
     }
 
-    // ── add / removeAt / removeAll (Reviewer Question 1 contract) ─────
+    // ── add / removeAt / removeAll (doc-index-canonical contract) ─────
 
     func testAddAppendsRecord() throws {
         let index = try Fuse.createIndex([] as [FuseKey<String>], ["apple"])
@@ -400,7 +401,8 @@ final class IndexingTests: XCTestCase {
     }
 
     func testEmptyArrayProducesPresentButEmptySubRecord() throws {
-        // Per Edge Cases #2: empty array is NOT equivalent to .none.
+        // Empty array is NOT equivalent to .none — see the matching
+        // assertion in AccessorSemanticsTests for the rationale.
         struct Doc: Sendable { let tags: [String] }
         let docs = [Doc(tags: [])]
         let keys = [try FuseKey<Doc>("tags", get: { $0.tags })]
@@ -414,7 +416,7 @@ final class IndexingTests: XCTestCase {
         XCTAssertTrue(arr.isEmpty)
     }
 
-    // ── copy() (Reviewer Question 1's copy-on-adopt rehydration) ──────
+    // ── copy() (copy-on-adopt: supplied indexes must not be aliased) ──
 
     func testCopyDoesNotAliasRecords() throws {
         let original = try Fuse.createIndex([] as [FuseKey<String>], ["a", "b", "c"])

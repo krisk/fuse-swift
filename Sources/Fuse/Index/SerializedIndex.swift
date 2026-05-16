@@ -8,8 +8,10 @@ import Foundation
 /// `records`: heterogeneous array — string records `{v, i, n}` from
 /// `Fuse<String>`, object records `{i, $: {<keyIdx>: ...}}` from
 /// `Fuse<Element>`. SubRecord entries are either a single `{v, n}` for
-/// scalar values or `[{v, i, n}, ...]` for array-derived values; the empty
-/// array `[]` is **not** equivalent to a missing key (see Edge Cases #2).
+/// scalar values or `[{v, i, n}, ...]` for array-derived values; the
+/// empty array `[]` is **not** equivalent to a missing key — it
+/// represents "key resolved through an array traversal that yielded
+/// zero elements" (key present, empty subrecord list).
 ///
 /// These types are internal — users round-trip through `Data` via
 /// `Fuse.parseIndex(_:)` / `FuseIndex.toJSON()`.

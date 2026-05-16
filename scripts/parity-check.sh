@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Release-gate cross-runtime parity check (PLAN.md Edge Cases #7).
-# Runs the fuse-js and fuse-swift oracles against the shared query
-# battery at scripts/parity/queries.json and diffs the canonicalized
-# results with score tolerance.
+# Release-gate cross-runtime parity check. Runs the fuse-js and
+# fuse-swift oracles against the shared query battery at
+# scripts/parity/queries.json and diffs the canonicalized results
+# with score tolerance. See scripts/parity/README.md for the contract.
 #
 # Exit 0 on full parity, 1 on mismatch, 2 on infra failure (missing
 # fuse-js / node, oracle build failure, etc.). Output to stderr is

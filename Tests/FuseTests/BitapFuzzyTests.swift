@@ -1,13 +1,11 @@
 import XCTest
 @testable import Fuse
 
-/// Phase-6 subset of `../fuse-js/test/fuzzy-search.test.js`. Covers the
-/// string-array (non-keyed) tests. The keyed-search cases from this file
-/// move to phase 8 once `FuseKey` plumbing lands.
-///
-/// Keyed-search test cases at upstream lines 93+ are intentionally
-/// out-of-scope for phase 6; they are not skipped here, just absent until
-/// phase 8.
+/// String-array (non-keyed) subset of
+/// `../fuse-js/test/fuzzy-search.test.js`. The keyed-search cases from
+/// the same upstream file (lines 93+) live in `KeyedSearchTests.swift`;
+/// keeping the two halves in separate files reflects the internal
+/// `Fuse.Search<String>` vs `Fuse.Search<Element>` code paths.
 final class BitapFuzzyTests: XCTestCase {
     private let fruitList = ["Apple", "Orange", "Banana"]
 

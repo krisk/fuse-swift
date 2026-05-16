@@ -1,10 +1,11 @@
 import XCTest
 @testable import Fuse
 
-/// Phase-9 parity port of `../fuse-js/test/match.test.js`. Each test cites
-/// its upstream counterpart by line number; the three `useTokenSearch`
-/// cases (upstream lines 69, 75, 81) are placeholder-skipped per the plan's
-/// explicit skip list — they return online when token search ships in v1.1.
+/// Parity port of `../fuse-js/test/match.test.js`. Each test cites its
+/// upstream counterpart by line number; the three `useTokenSearch` cases
+/// (upstream lines 69, 75, 81) are placeholder-skipped because v1 does
+/// not ship `useTokenSearch` — they return online when token search
+/// lands in a future release.
 final class MatchTests: XCTestCase {
 
     // ── fuzzy / exact / unrelated ─────────────────────────────────────
@@ -137,23 +138,23 @@ final class MatchTests: XCTestCase {
     // ── token-search skips (plan explicit-skip list) ──────────────────
 
     func testThrowsWhenUseTokenSearchTrueFullBuild() throws {
-        // Upstream match.test.js:69. v1 omits useTokenSearch entirely
-        // (decision 6); this case returns online when token search ships
-        // in v1.1.
-        throw XCTSkip("useTokenSearch deferred to v1.1")
+        // Upstream match.test.js:69. v1 does not ship useTokenSearch;
+        // this case returns online when token search lands in a future
+        // release.
+        throw XCTSkip("useTokenSearch not in v1 surface")
     }
 
     func testThrowsWhenUseTokenSearchTrueBasicBuild() throws {
         // Upstream match.test.js:75. fuse-swift has a single SwiftPM
         // product (no basic / full split), so this case is structurally
         // n/a beyond token search itself landing.
-        throw XCTSkip("useTokenSearch deferred to v1.1")
+        throw XCTSkip("useTokenSearch not in v1 surface")
     }
 
     func testStillWorksWhenUseTokenSearchExplicitlyFalse() throws {
         // Upstream match.test.js:81. Skip parallel to the other two —
         // it's a regression test against the token-search guard, which
         // doesn't exist in v1 because the option doesn't exist.
-        throw XCTSkip("useTokenSearch deferred to v1.1")
+        throw XCTSkip("useTokenSearch not in v1 surface")
     }
 }

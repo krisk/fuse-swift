@@ -1,9 +1,12 @@
 import XCTest
 @testable import Fuse
 
-/// Phase-8 coverage for value-accessor semantics — the rules from Edge
-/// Cases #1, #2, and #3 plus the "Accessor-semantics parity coverage"
-/// section of the plan. Asserts behavior at two layers:
+/// Coverage for value-accessor semantics — the rules around how
+/// `FuseKey` accessor forms (`.keyPath`, `.path`, `.closure`) translate
+/// element fields into indexed sub-records, including the empty-vs-
+/// missing-array distinction, scalar coercion, and JS-style
+/// stringification of terminal non-scalars. Asserts behavior at two
+/// layers:
 ///
 ///  1. **Direct `ValueAccessor.defaultGet`** for path-form keys against
 ///     `Encodable` fixtures. Covers the JS `get.ts` parity (array index
@@ -162,8 +165,11 @@ final class AccessorSemanticsTests: XCTestCase {
     // ── 6. Array-traversed paths return .multiple([]) when empty ──────
 
     func testEmptyArrayReturnsMultipleEmptyNotNone() throws {
-        // Per Edge Cases #2: empty array touched along the path keeps the
-        // key present (with an empty subrecord list), NOT absent.
+        // An empty array touched along the path keeps the key present
+        // with an empty subrecord list — NOT absent. Mirrors upstream
+        // `_createObjectRecord` at `../fuse-js/src/tools/FuseIndex.ts:226`,
+        // which assigns `record.$![keyIndex] = subRecords` even when the
+        // inner loop produced zero entries.
         struct Inner: Encodable { let name: String }
         struct Doc: Encodable { let authors: [Inner] }
         let result = try ValueAccessor.defaultGet(
@@ -324,13 +330,17 @@ final class AccessorSemanticsTests: XCTestCase {
         XCTAssertEqual(arr.map(\.index), [0, 1])
     }
 
-    // ── 11. Supplied-prebuilt-index carveout (Reviewer Question 1) ────
+    // ── 11. Supplied-prebuilt-index carveout for non-Encodable types ──
 
     func testSearchAcceptsPrebuiltIndexForNonEncodableElement() throws {
-        // Per Edge Cases #1: when a prebuilt index is supplied to
-        // Fuse.Search.init, the default walker is not invoked. Non-Encodable
-        // elements can therefore search against a parsed index without
-        // supplying a custom options.getFn.
+        // When a prebuilt index is supplied to Fuse.Search.init, the
+        // default walker is not invoked — the records were built earlier
+        // (likely via Fuse.createIndex on an Encodable proxy, or via
+        // Fuse.parseIndex from JSON). Non-Encodable elements can therefore
+        // search against a parsed index without supplying a custom
+        // options.getFn. Mirrors upstream's `_myIndex = (typeof index
+        // !== 'undefined' ? index : ...)` selection at
+        // `../fuse-js/src/core/index.ts:100,107`.
 
         // 1. Build the JSON for an index over an Encodable proxy.
         struct ProxyDoc: Codable, Equatable { let title: String }
@@ -393,9 +403,8 @@ final class AccessorSemanticsTests: XCTestCase {
 
         let opts = try FuseOptions<String>()
         _ = try Fuse.Search<String>(docs1, options: opts, index: original)
-        // Mutate the COPY taken by Search by calling search-side public API
-        // — but Search has no mutators in phase 8; instead, mutate the
-        // original directly and verify Search sees the pre-mutation state.
+        // Mutate the original FuseIndex directly; the Search above
+        // adopted a copy, so the mutation must not propagate back.
         try original.removeAt(0)
         XCTAssertEqual(original.size(), 2, "post-mutation original")
 

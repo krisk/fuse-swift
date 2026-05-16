@@ -35,7 +35,7 @@ cli:
 
 # Release gate: strict-concurrency test pass + cross-runtime parity match.
 # Run this before tagging v2.0.0-rc.1 / v2.0.0. Output of the parity check
-# is checked in alongside the tag (per PLAN.md Success Criteria).
+# is checked in alongside the tag.
 release: strict-test parity
 	@echo ""
 	@echo "✓ release gate passed"

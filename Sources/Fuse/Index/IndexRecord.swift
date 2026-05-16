@@ -21,8 +21,9 @@ final class IndexRecord {
         self.kind = kind
     }
 
-    /// Deep copy for the copy-on-adopt rehydration path (Reviewer Question
-    /// 1 / Edge Cases): supplied indexes must not be aliased.
+    /// Deep copy for the copy-on-adopt path: when a `Fuse.Search` adopts
+    /// a user-supplied prebuilt index, the records must not be aliased
+    /// back into the user's `FuseIndex` instance.
     func copy() -> IndexRecord {
         switch kind {
         case .stringRecord:
@@ -35,8 +36,10 @@ final class IndexRecord {
 
 /// Per-key entry inside an object record. Mirrors `RecordEntry` at
 /// `../fuse-js/src/types.ts:80-82`. Single-value keys use `.single`;
-/// array-derived keys use `.multiple` (including the empty-array case
-/// which is **not** equivalent to a missing key — see Edge Cases #2).
+/// array-derived keys use `.multiple` (including the empty-array case,
+/// which is **not** equivalent to a missing key — an empty array still
+/// produces an entry, matching upstream `_createObjectRecord` at
+/// `../fuse-js/src/tools/FuseIndex.ts:226`).
 enum IndexEntry {
     case single(IndexSubRecord)
     case multiple([IndexSubRecord])
