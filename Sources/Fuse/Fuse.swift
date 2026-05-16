@@ -398,7 +398,10 @@ extension Fuse {
         ) -> InternalResult<Element>? {
             let r = searcher.searchIn(text: value)
             if !r.isMatch { return nil }
-            let scoreInput = ComputeScore.MatchInput(score: r.score, norm: norm, weight: 1.0)
+            // String-list path is keyless; passing `weight: nil` mirrors
+            // upstream's `key ? key.weight : null` shape so the EPSILON
+            // swap in ComputeScore stays off and an exact match scores 0.
+            let scoreInput = ComputeScore.MatchInput(score: r.score, norm: norm, weight: nil)
             let finalScore = ComputeScore.compute(
                 matches: [scoreInput],
                 ignoreFieldNorm: options.ignoreFieldNorm
@@ -410,7 +413,7 @@ extension Fuse {
                 key: nil,
                 refIndex: nil,
                 norm: norm,
-                weight: 1.0
+                weight: nil
             )
             return InternalResult(
                 item: docs[docIndex],
@@ -547,7 +550,8 @@ struct InternalResult<Element> {
 }
 
 /// Internal per-match record. `key` is nil for string-list matches; `refIndex`
-/// is nil for non-array entries.
+/// is nil for non-array entries. `weight` is nil for keyless (string-list)
+/// matches — same encoding as upstream's `key ? key.weight : null`.
 struct InternalMatch {
     let score: Double
     let value: String
@@ -555,5 +559,5 @@ struct InternalMatch {
     let key: KeySource?
     let refIndex: Int?
     let norm: Double
-    let weight: Double
+    let weight: Double?
 }

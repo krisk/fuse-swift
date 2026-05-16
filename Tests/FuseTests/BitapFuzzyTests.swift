@@ -103,7 +103,10 @@ final class BitapFuzzyTests: XCTestCase {
         let result = fuse.search("Apple")
         XCTAssertEqual(result.count, 1)
         XCTAssertNotNil(result[0].score)
-        XCTAssertEqual(result[0].score!, 0, accuracy: 1e-12)  // exact match → ulpOfOne^norm ≈ 0
+        // Keyless (string-list) match with score 0 stays 0 through
+        // ComputeScore: upstream's `key ? key.weight : null` shape leaves
+        // weight nil, the EPSILON swap doesn't fire, and pow(0, norm) = 0.
+        XCTAssertEqual(result[0].score!, 0)
     }
 
     func testNoIncludeScoreLeavesScoreNil() throws {

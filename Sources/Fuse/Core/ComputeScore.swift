@@ -4,11 +4,21 @@ import Foundation
 /// tuples. Mirrors `../fuse-js/src/core/computeScore.ts` exactly.
 ///
 /// Formula per match: `base ^ exponent` where
-///   - `base = score`, except when `score == 0 && weight != 0`, in which case
-///     `base = Double.ulpOfOne` (mirrors JS `Number.EPSILON` — Edge Cases item 8).
-///   - `exponent = weight * (ignoreFieldNorm ? 1 : norm)`
-/// Per-match contributions are multiplied together; for a single-match string
-/// search the totalScore is one base-exponent contribution.
+///   - `base = score`, except when `score == 0 && weight != nil`, in which
+///     case `base = Double.ulpOfOne` (mirrors JS `Number.EPSILON` —
+///     Edge Cases item 8).
+///   - `exponent = (weight ?? 1) * (ignoreFieldNorm ? 1 : norm)`
+///
+/// `weight == nil` encodes upstream's `key ? key.weight : null` shape for
+/// non-keyed (string-list) matches. Upstream gates the EPSILON swap on
+/// `score === 0 && weight` — `null` is falsy in JS, so an exact string-list
+/// match keeps base = 0, exponent = norm, and the contribution is
+/// `pow(0, norm) === 0`. A keyed match with the default weight 1 hits the
+/// swap and gets `pow(EPSILON, weight * norm)` instead, which propagates
+/// the field-norm penalty even for an exact hit.
+///
+/// Per-match contributions are multiplied together; for a single-match
+/// string search the totalScore is one base-exponent contribution.
 ///
 /// Norm is in the **exponent**, not a multiplier. A long field has a small
 /// norm; a small exponent on `base < 1` pulls the contribution toward 1
@@ -17,7 +27,7 @@ enum ComputeScore {
     struct MatchInput {
         let score: Double
         let norm: Double
-        let weight: Double  // 1.0 for non-keyed string-list search
+        let weight: Double?  // nil for non-keyed (string-list) matches
     }
 
     static func compute(
@@ -27,8 +37,8 @@ enum ComputeScore {
         var totalScore: Double = 1
         for match in matches {
             let normTerm = ignoreFieldNorm ? 1.0 : match.norm
-            let exponent = match.weight * normTerm
-            let base: Double = (match.score == 0 && match.weight != 0)
+            let exponent = (match.weight ?? 1.0) * normTerm
+            let base: Double = (match.score == 0 && match.weight != nil)
                 ? .ulpOfOne
                 : match.score
             totalScore *= pow(base, exponent)
