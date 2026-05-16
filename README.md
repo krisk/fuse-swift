@@ -303,6 +303,8 @@ The index is rebuilt per call. For repeated searches over a stable corpus, the a
 
 **Legacy GCD codebases.** `Fuse.Search` works behind `DispatchQueue.global().async` as long as the calling code already guarantees no concurrent access (typically: the searcher is touched only from a single serial queue). Under `-strict-concurrency=complete` the compiler will require one of the patterns above instead.
 
+For more patterns (debounced search-as-you-type, `async let` parallel across multiple corpora, main-actor searchers for small corpora, "what not to do" with `@unchecked Sendable`, profiling guidance), see [`docs/CONCURRENCY.md`](docs/CONCURRENCY.md). A runnable demo of these patterns lives at [`Examples/Concurrency/`](Examples/Concurrency/).
+
 ## Version compatibility
 
 | fuse-swift | fuse.js | Notes |
@@ -317,13 +319,22 @@ The 1.x line is the previous `krisk/fuse-swift` codebase (top tag 1.4.0). It is 
 
 ## Examples
 
-A runnable CLI demo lives at [`Examples/CLI/`](Examples/CLI/) and exercises both string-list and keyed object search. From a checkout:
+Two runnable demos live under `Examples/`:
 
-```
-cd Examples/CLI
-swift run FuseCLI            # default queries
-swift run FuseCLI "stve"     # custom query against both fixtures
-```
+- [`Examples/CLI/`](Examples/CLI/) — string-list and keyed object search.
+
+  ```
+  cd Examples/CLI
+  swift run FuseCLI            # default queries
+  swift run FuseCLI "stve"     # custom query against both fixtures
+  ```
+
+- [`Examples/Concurrency/`](Examples/Concurrency/) — actor wrapper, `Task.detached`, `async let` across distinct actors, and debounced search-as-you-type in one binary.
+
+  ```
+  cd Examples/Concurrency
+  swift run FuseConcurrency
+  ```
 
 ## Syncing with upstream
 
