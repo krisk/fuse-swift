@@ -250,3 +250,43 @@ public struct FuseIndexOptions<Element> {
 }
 
 extension FuseIndexOptions: Sendable where Element: Sendable {}
+
+/// Options for the one-shot `Fuse.match(_:in:options:)` helper. Scoped to
+/// the bitap-relevant subset of `FuseOptions`; keyed-search / sort /
+/// accessor flags don't apply to a single string-vs-string comparison.
+/// Mirrors the field set consulted by upstream's `Fuse.match` at
+/// `../fuse-js/src/entry.ts:15-26` (which accepts a full `IFuseOptions`
+/// but only reads the bitap subset).
+public struct FuseMatchOptions: Sendable {
+    public var location: Int
+    public var distance: Int
+    public var threshold: Double
+    public var findAllMatches: Bool
+    public var minMatchCharLength: Int
+    public var includeMatches: Bool
+    public var ignoreLocation: Bool
+    public var isCaseSensitive: Bool
+    public var ignoreDiacritics: Bool
+
+    public init(
+        location: Int = 0,
+        distance: Int = 100,
+        threshold: Double = 0.6,
+        findAllMatches: Bool = false,
+        minMatchCharLength: Int = 1,
+        includeMatches: Bool = false,
+        ignoreLocation: Bool = false,
+        isCaseSensitive: Bool = false,
+        ignoreDiacritics: Bool = false
+    ) {
+        self.location = location
+        self.distance = distance
+        self.threshold = threshold
+        self.findAllMatches = findAllMatches
+        self.minMatchCharLength = minMatchCharLength
+        self.includeMatches = includeMatches
+        self.ignoreLocation = ignoreLocation
+        self.isCaseSensitive = isCaseSensitive
+        self.ignoreDiacritics = ignoreDiacritics
+    }
+}

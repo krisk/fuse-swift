@@ -27,6 +27,42 @@ public enum Fuse {
         return index
     }
 
+    /// One-shot pattern-vs-text fuzzy match. Mirrors `Fuse.match` at
+    /// `../fuse-js/src/entry.ts:15-26`. Skips the full Search / FuseIndex
+    /// pipeline; suitable for ad-hoc string comparisons where there is no
+    /// document corpus to index.
+    ///
+    /// On no match, returns `FuseMatchOutcome(isMatch: false, score: 1)`.
+    /// On exact match, score is `0`. `indices` is non-nil only when
+    /// `options.includeMatches` is true, matching upstream's optional-field
+    /// emission contract.
+    public static func match(
+        _ pattern: String,
+        in text: String,
+        options: FuseMatchOptions = FuseMatchOptions()
+    ) -> FuseMatchOutcome {
+        let bitap = BitapSearch(
+            pattern: pattern,
+            options: BitapSearchOptions(
+                location: options.location,
+                distance: options.distance,
+                threshold: options.threshold,
+                findAllMatches: options.findAllMatches,
+                minMatchCharLength: options.minMatchCharLength,
+                includeMatches: options.includeMatches,
+                ignoreLocation: options.ignoreLocation,
+                isCaseSensitive: options.isCaseSensitive,
+                ignoreDiacritics: options.ignoreDiacritics
+            )
+        )
+        let r = bitap.searchIn(text: text)
+        return FuseMatchOutcome(
+            isMatch: r.isMatch,
+            score: r.score,
+            indices: options.includeMatches ? (r.indices ?? []) : nil
+        )
+    }
+
     /// Parse a JSON-serialized index back into a `FuseIndex<Element>`.
     /// Mirrors `Fuse.parseIndex` at `../fuse-js/src/tools/FuseIndex.ts:263-275`.
     ///
