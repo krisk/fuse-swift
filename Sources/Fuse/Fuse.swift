@@ -7,6 +7,50 @@ import Foundation
 /// forcing callers to specialize a type parameter the statics don't use).
 public enum Fuse {
     public static let version: String = "2.0.0-dev"
+
+    /// Build an index from `docs` using the given `keys`. Mirrors
+    /// `Fuse.createIndex` at `../fuse-js/src/tools/FuseIndex.ts:251-261`.
+    /// The returned `FuseIndex` can be passed to `Fuse.Search(_:options:index:)`
+    /// to skip re-indexing on the next searcher construction.
+    public static func createIndex<Element>(
+        _ keys: [FuseKey<Element>],
+        _ docs: [Element],
+        options: FuseIndexOptions<Element> = FuseIndexOptions<Element>()
+    ) throws -> FuseIndex<Element> {
+        let index = FuseIndex<Element>(
+            keys: keys,
+            getFn: options.getFn,
+            fieldNormWeight: options.fieldNormWeight
+        )
+        index.setSources(docs)
+        try index.create()
+        return index
+    }
+
+    /// Parse a JSON-serialized index back into a `FuseIndex<Element>`.
+    /// Mirrors `Fuse.parseIndex` at `../fuse-js/src/tools/FuseIndex.ts:263-275`.
+    ///
+    /// Live accessors are **not** rebound here — the parsed index has no
+    /// accessor binding. The caller passes this index to
+    /// `Fuse.Search(_:options:index:)` (lands in phase 8), which binds
+    /// `options.keys` accessors by serialized-identity matching per the
+    /// rehydration contract in the plan (Reviewer Question 1).
+    public static func parseIndex<Element>(
+        _ data: Data,
+        options: FuseIndexOptions<Element> = FuseIndexOptions<Element>()
+    ) throws -> FuseIndex<Element> {
+        let payload = try JSONDecoder().decode(SerializedIndex.self, from: data)
+        let rehydratedKeys = try payload.keys.map { sk -> FuseKey<Element> in
+            try FuseKey<Element>(rehydratedFrom: sk)
+        }
+        let index = FuseIndex<Element>(
+            keys: rehydratedKeys,
+            getFn: options.getFn,
+            fieldNormWeight: options.fieldNormWeight
+        )
+        index.setRecords(payload.records.map(IndexRecord.init))
+        return index
+    }
 }
 
 extension Fuse {
