@@ -1,0 +1,101 @@
+{
+  "$schema_note": "Each entry: {name, fixture, options, queries[]}. Both oracles iterate this array in order. The options shape mirrors fuse-js IFuseOptions verbatim; keys are either strings (dotted path), arrays of strings (segmented path), or objects {name, weight} / {name (array), weight}. Add cases to widen parity coverage during sync PRs.",
+  "cases": [
+    {
+      "name": "string-list-basic",
+      "fixture": "fruits",
+      "options": { "includeScore": true },
+      "queries": ["apple", "ange", "nan", "xyz", ""]
+    },
+    {
+      "name": "string-list-limit",
+      "fixture": "fruits",
+      "options": { "includeScore": true, "limit": 3 },
+      "queries": ["an", "apple"]
+    },
+    {
+      "name": "books-deep-key-search",
+      "fixture": "books",
+      "options": {
+        "includeScore": true,
+        "keys": ["title", "author.firstName"]
+      },
+      "queries": ["Stve", "Old", "Remy", "1066"]
+    },
+    {
+      "name": "books-include-matches",
+      "fixture": "books",
+      "options": {
+        "includeScore": true,
+        "includeMatches": true,
+        "keys": ["title", "author.firstName"]
+      },
+      "queries": ["Stve", "Old"]
+    },
+    {
+      "name": "books-weighted-keys-not-summing-to-one",
+      "fixture": "books",
+      "options": {
+        "includeScore": true,
+        "keys": [
+          { "name": "title" },
+          { "name": "author.firstName", "weight": 2 }
+        ]
+      },
+      "queries": ["Steve", "Old Man"]
+    },
+    {
+      "name": "books-weighted-keys-03-07",
+      "fixture": "books",
+      "options": {
+        "includeScore": true,
+        "keys": [
+          { "name": "title", "weight": 0.3 },
+          { "name": "author.firstName", "weight": 0.7 }
+        ]
+      },
+      "queries": ["Steve", "Old Man"]
+    },
+    {
+      "name": "books-threshold-zero",
+      "fixture": "books",
+      "options": {
+        "includeScore": true,
+        "threshold": 0,
+        "keys": ["title", "author.firstName"]
+      },
+      "queries": ["The Lock Artist", "Hamilton", "Steve"]
+    },
+    {
+      "name": "books-find-all-matches",
+      "fixture": "books",
+      "options": {
+        "includeScore": true,
+        "includeMatches": true,
+        "findAllMatches": true,
+        "keys": ["title"]
+      },
+      "queries": ["the"]
+    },
+    {
+      "name": "books-case-sensitive",
+      "fixture": "books",
+      "options": {
+        "includeScore": true,
+        "isCaseSensitive": true,
+        "keys": ["title", "author.firstName"]
+      },
+      "queries": ["Steve", "steve"]
+    },
+    {
+      "name": "books-ignore-location",
+      "fixture": "books",
+      "options": {
+        "includeScore": true,
+        "ignoreLocation": true,
+        "keys": ["title", "author.firstName"]
+      },
+      "queries": ["Artist", "Lock"]
+    }
+  ]
+}
