@@ -155,10 +155,12 @@ let fuse = try Fuse.Search<Book>(list, options: try FuseOptions<Book>(
 **String keys → typed key paths.**
 
 ```js
+// fuse.js
 keys: ['title', 'author.firstName']
 ```
 
 ```swift
+// fuse-swift
 keys: [
     try FuseKey<Book>("title", keyPath: \Book.title),
     try FuseKey<Book>(path: "author.firstName"),
@@ -168,6 +170,7 @@ keys: [
 **Weighted keys.**
 
 ```js
+// fuse.js
 keys: [
     { name: 'title',             weight: 0.7 },
     { name: 'author.firstName',  weight: 0.3 },
@@ -175,6 +178,7 @@ keys: [
 ```
 
 ```swift
+// fuse-swift
 keys: [
     try FuseKey<Book>("title", keyPath: \Book.title, weight: 0.7),
     try FuseKey<Book>(path: "author.firstName",      weight: 0.3),
@@ -184,20 +188,24 @@ keys: [
 **Array-form path (literal-dot segments).**
 
 ```js
+// fuse.js
 keys: [['author', 'first.name']]
 ```
 
 ```swift
+// fuse-swift
 keys: [try FuseKey<Book>(path: ["author", "first.name"])]
 ```
 
 **Custom `getFn`.**
 
 ```js
+// fuse.js
 new Fuse(list, { keys: ['author'], getFn: (obj) => obj.author.lastName })
 ```
 
 ```swift
+// fuse-swift
 try Fuse.Search<Book>(
     list,
     options: try FuseOptions<Book>(
@@ -210,20 +218,24 @@ try Fuse.Search<Book>(
 **Search.**
 
 ```js
+// fuse.js
 fuse.search('apple', { limit: 5 })
 ```
 
 ```swift
+// fuse-swift
 fuse.search("apple", limit: 5)
 ```
 
 **One-shot `Fuse.match`.**
 
 ```js
+// fuse.js
 Fuse.match('apple', 'apple pie', { includeMatches: true })
 ```
 
 ```swift
+// fuse-swift
 Fuse.match("apple", in: "apple pie", options: FuseMatchOptions(includeMatches: true))
 ```
 
