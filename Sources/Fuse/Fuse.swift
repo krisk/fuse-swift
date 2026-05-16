@@ -90,13 +90,21 @@ public enum Fuse {
 
 extension Fuse {
     /// Generic searcher. v1 supports `Fuse.Search<String>` for string-array
-    /// search and `Fuse.Search<Element>` for keyed object search (phase 8).
-    /// The class is intentionally non-`Sendable`; it owns mutable index
-    /// state and uses synchronous methods. See plan section "Sendable scope".
+    /// search and `Fuse.Search<Element>` for keyed object search. The class
+    /// is intentionally non-`Sendable`; it owns mutable index / cache state
+    /// and uses synchronous methods. See plan section "Sendable scope".
     public final class Search<Element> {
-        private let docs: [Element]
+        private var docs: [Element]
         private let options: FuseOptions<Element>
-        private let myIndex: FuseIndex<Element>
+        private var myIndex: FuseIndex<Element>
+
+        // Searcher cache. Per upstream `_lastQuery` / `_lastSearcher`:
+        // identical-pattern re-queries reuse the BitapSearch instance, and
+        // mutations (setCollection / add / removeAt / remove with matches)
+        // invalidate. Internal so cache-invalidation tests can observe
+        // identity (===) without exposing the cache on the public surface.
+        var cachedQuery: String?
+        var cachedSearcher: BitapSearch?
 
         /// Construct a searcher over `docs`. When `index` is supplied, it is
         /// copy-on-adopted (per Reviewer Question 1's contract: the user's
@@ -126,66 +134,208 @@ extension Fuse {
             }
         }
 
+        // ── public read surface ───────────────────────────────────────────
+
+        /// Returns the live `FuseIndex` backing this searcher. Mirrors
+        /// upstream `getIndex()` at `../fuse-js/src/core/index.ts:207-209`.
+        /// Mutators on the returned index would desynchronize from `docs`;
+        /// callers wanting persistence should use `index.toJSON()`.
+        public func getIndex() -> FuseIndex<Element> {
+            myIndex
+        }
+
         /// Search for `pattern` across the collection.
         ///
         /// Per the plan's empty-query contract: blank / whitespace queries
         /// return one `FuseResult` per doc in `refIndex` order with
         /// `score = nil` and `matches = nil` (regardless of `includeScore` /
         /// `includeMatches`). `limit > 0` slices the result.
+        ///
+        /// When `limit > 0` and the query is non-blank, the heap-based
+        /// top-K path runs **regardless of `shouldSort: false`** (parity
+        /// with `../fuse-js/src/core/index.ts:236-263`). The heap selects
+        /// the top-N candidates by score only; a custom `sortFn` only
+        /// orders the extracted N, never affects which N are admitted.
         public func search(_ pattern: String, limit: Int? = nil) -> [FuseResult<Element>] {
             if Trim.isBlank(pattern) {
                 var results = docs.enumerated().map { idx, item in
                     FuseResult<Element>(item: item, refIndex: idx, score: nil, matches: nil)
                 }
-                if let lim = limit, lim > 0 {
+                if let lim = limit, lim >= 0 {
                     results = Array(results.prefix(lim))
                 }
                 return results
             }
 
-            let searcher = BitapSearch(pattern: pattern, options: bitapOptions())
+            let searcher = getSearcher(pattern: pattern)
+            let useHeap = (limit ?? -1) > 0
+            let collected: [InternalResult<Element>]
 
-            var internalResults: [InternalResult<Element>] = []
+            if useHeap {
+                collected = heapSearch(searcher: searcher, limit: limit!)
+            } else {
+                collected = linearSearch(searcher: searcher, limit: limit)
+            }
+            return formatResults(collected)
+        }
+
+        // ── mutators (synchronized docs / index / cache) ──────────────────
+
+        /// Append `doc` to the collection. Atomic per Edge Cases #1:
+        /// `myIndex.add` runs first; `docs` and the cache are only updated
+        /// after the index succeeds. On `pathEncodingFailed`, every
+        /// observable property is identical to its pre-call state.
+        ///
+        /// Cache always invalidates on success (parity with upstream
+        /// `../fuse-js/src/core/index.ts:130-156`).
+        public func add(_ doc: Element) throws {
+            _ = try myIndex.add(doc, docIndex: docs.count)
+            docs.append(doc)
+            invalidateSearcherCache()
+        }
+
+        /// Remove docs matching `predicate`. Returns the removed docs in
+        /// source order. Mirrors `../fuse-js/src/core/index.ts:158-183`.
+        ///
+        /// **No-op invariant**: when the predicate matches zero docs, the
+        /// searcher cache is NOT invalidated (upstream gates invalidation
+        /// inside `if (indicesToRemove.length)`). Tests at upstream
+        /// `cache-invalidation.test.js:50` exercise this; the plan calls
+        /// it out explicitly as a load-bearing invariant.
+        @discardableResult
+        public func remove(_ predicate: (Element, Int) -> Bool = { _, _ in false }) -> [Element] {
+            var removed: [Element] = []
+            var indicesToRemove: [Int] = []
+            for (i, doc) in docs.enumerated() where predicate(doc, i) {
+                removed.append(doc)
+                indicesToRemove.append(i)
+            }
+            if indicesToRemove.isEmpty {
+                return removed
+            }
+            let toRemove = Set(indicesToRemove)
+            docs = docs.enumerated().compactMap { toRemove.contains($0.offset) ? nil : $0.element }
+            myIndex.removeAll(indicesToRemove)
+            invalidateSearcherCache()
+            return removed
+        }
+
+        /// Remove the doc at `idx`. Throws `FuseError.invalidDocIndex` for
+        /// out-of-range / negative input **before** any mutation, mirroring
+        /// the post-fix upstream contract at `../fuse-js/src/core/index.ts:185-199`.
+        /// Cache invalidates only after a successful removal.
+        @discardableResult
+        public func removeAt(_ idx: Int) throws -> Element {
+            guard idx >= 0, idx < docs.count else {
+                throw FuseError.invalidDocIndex(idx: idx)
+            }
+            let doc = docs.remove(at: idx)
+            try myIndex.removeAt(idx)
+            invalidateSearcherCache()
+            return doc
+        }
+
+        /// Replace the entire collection. Atomic per Edge Cases #1: the
+        /// replacement index is built / validated in a local first; the
+        /// instance's docs / index / cache are only swapped after the new
+        /// index is fully constructed.
+        public func setCollection(_ docs: [Element], index: FuseIndex<Element>? = nil) throws {
+            let newIndex: FuseIndex<Element>
+            if let provided = index {
+                try Search.validateSuppliedIndex(provided, against: options.keys)
+                newIndex = provided.copy()
+            } else {
+                let built = FuseIndex<Element>(
+                    keys: options.keys,
+                    getFn: options.getFn,
+                    fieldNormWeight: options.fieldNormWeight
+                )
+                built.setSources(docs)
+                try built.create()
+                newIndex = built
+            }
+            self.docs = docs
+            self.myIndex = newIndex
+            invalidateSearcherCache()
+        }
+
+        // ── private: search execution paths ───────────────────────────────
+
+        private func linearSearch(
+            searcher: BitapSearch,
+            limit: Int?
+        ) -> [InternalResult<Element>] {
+            var results: [InternalResult<Element>] = []
             for record in myIndex.records {
-                switch record.kind {
-                case .stringRecord(let value, let norm):
-                    if let r = searchStringRecord(
-                        value: value,
-                        norm: norm,
-                        docIndex: record.i,
-                        searcher: searcher
-                    ) {
-                        internalResults.append(r)
-                    }
-                case .objectRecord(let entries):
-                    if let r = searchObjectRecord(
-                        entries: entries,
-                        docIndex: record.i,
-                        searcher: searcher
-                    ) {
-                        internalResults.append(r)
-                    }
+                if let r = scoreRecord(record, searcher: searcher) {
+                    results.append(r)
                 }
             }
-
             if options.shouldSort {
-                if let sortFn = options.sortFn {
-                    internalResults.sort { a, b in
-                        sortFn(a.sortItem(), b.sortItem()) == .orderedAscending
-                    }
-                } else {
-                    internalResults.sort { a, b in
-                        if a.finalScore != b.finalScore { return a.finalScore < b.finalScore }
-                        return a.refIndex < b.refIndex
-                    }
+                sortInternalResults(&results)
+            }
+            if let lim = limit, lim >= 0, results.count > lim {
+                results = Array(results.prefix(lim))
+            }
+            return results
+        }
+
+        private func heapSearch(
+            searcher: BitapSearch,
+            limit: Int
+        ) -> [InternalResult<Element>] {
+            var heap = MaxHeap<InternalResult<Element>>(limit: limit) { $0.finalScore }
+            for record in myIndex.records {
+                guard let r = scoreRecord(record, searcher: searcher) else { continue }
+                if heap.shouldInsert(score: r.finalScore) {
+                    heap.insert(r)
                 }
             }
-
-            if let lim = limit, lim > 0, internalResults.count > lim {
-                internalResults = Array(internalResults.prefix(lim))
+            // The heap picks the top-N strictly by score; a custom `sortFn`
+            // only re-orders the extracted N (parity with upstream
+            // `extractSorted(sortFn)` at MaxHeap.ts:46-52 + index.ts:247).
+            if let sortFn = options.sortFn {
+                return heap.extractSorted { a, b in
+                    sortFn(a.sortItem(), b.sortItem()) == .orderedAscending
+                }
             }
+            return heap.extractSorted { a, b in
+                if a.finalScore != b.finalScore { return a.finalScore < b.finalScore }
+                return a.refIndex < b.refIndex
+            }
+        }
 
-            return internalResults.map { r in
+        private func sortInternalResults(_ results: inout [InternalResult<Element>]) {
+            if let sortFn = options.sortFn {
+                results.sort { sortFn($0.sortItem(), $1.sortItem()) == .orderedAscending }
+            } else {
+                results.sort { a, b in
+                    if a.finalScore != b.finalScore { return a.finalScore < b.finalScore }
+                    return a.refIndex < b.refIndex
+                }
+            }
+        }
+
+        private func scoreRecord(
+            _ record: IndexRecord,
+            searcher: BitapSearch
+        ) -> InternalResult<Element>? {
+            switch record.kind {
+            case .stringRecord(let value, let norm):
+                return scoreStringRecord(
+                    value: value, norm: norm, docIndex: record.i, searcher: searcher
+                )
+            case .objectRecord(let entries):
+                return scoreObjectRecord(
+                    entries: entries, docIndex: record.i, searcher: searcher
+                )
+            }
+        }
+
+        private func formatResults(
+            _ internalResults: [InternalResult<Element>]
+        ) -> [FuseResult<Element>] {
+            internalResults.map { r in
                 var matches: [FuseMatch]? = nil
                 if options.includeMatches {
                     matches = r.matches.compactMap { m in
@@ -207,6 +357,23 @@ extension Fuse {
             }
         }
 
+        // ── searcher cache ────────────────────────────────────────────────
+
+        private func getSearcher(pattern: String) -> BitapSearch {
+            if cachedQuery == pattern, let s = cachedSearcher {
+                return s
+            }
+            let s = BitapSearch(pattern: pattern, options: bitapOptions())
+            cachedQuery = pattern
+            cachedSearcher = s
+            return s
+        }
+
+        private func invalidateSearcherCache() {
+            cachedQuery = nil
+            cachedSearcher = nil
+        }
+
         // ── helpers ───────────────────────────────────────────────────────
 
         private func bitapOptions() -> BitapSearchOptions {
@@ -223,7 +390,7 @@ extension Fuse {
             )
         }
 
-        private func searchStringRecord(
+        private func scoreStringRecord(
             value: String,
             norm: Double,
             docIndex: Int,
@@ -253,7 +420,7 @@ extension Fuse {
             )
         }
 
-        private func searchObjectRecord(
+        private func scoreObjectRecord(
             entries: [Int: IndexEntry],
             docIndex: Int,
             searcher: BitapSearch
@@ -355,7 +522,7 @@ extension Fuse {
 
 /// Internal pre-format result: the unsorted, unformatted matches collected
 /// for one document. Translates to a `FuseResult` at the end of `search`.
-private struct InternalResult<Element> {
+struct InternalResult<Element> {
     let item: Element
     let refIndex: Int
     let finalScore: Double
@@ -381,7 +548,7 @@ private struct InternalResult<Element> {
 
 /// Internal per-match record. `key` is nil for string-list matches; `refIndex`
 /// is nil for non-array entries.
-private struct InternalMatch {
+struct InternalMatch {
     let score: Double
     let value: String
     let indices: [FuseRange]?
