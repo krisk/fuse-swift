@@ -1,12 +1,12 @@
 # fuse-swift
 
-<!-- Badges (CI / SPM / platforms / license) will land alongside the first public tag. -->
+<!-- Badges (CI / SPM / platforms) will land once CI is set up post-release. -->
 
 The official Swift port of [fuse.js](https://github.com/krisk/fuse). Byte-equivalent results, idiomatic Swift API, syncs with each upstream release.
 
 ## Status
 
-v2.0.0-rc.1 candidate. v1 scope is feature-complete and has 253 unit tests plus a cross-runtime parity check against fuse-js 7.4.0-beta.5 (25 query cases, 138 result records, all match within 1e-9 score tolerance). First public tag is pending LICENSE selection and a short feedback window.
+v2.0.0-rc.1 is the first release candidate. v1 scope is feature-complete and has 253 unit tests plus a cross-runtime parity check against fuse-js 7.4.0-beta.5 (25 query cases, 138 result records, all match within 1e-9 score tolerance). Promotion to `v2.0.0` follows a short feedback window.
 
 ## Install
 
@@ -343,7 +343,7 @@ For more patterns (debounced search-as-you-type, `async let` parallel across mul
 
 | fuse-swift | fuse.js | Notes |
 |---|---|---|
-| 2.0.0 _(rc.1 pending)_ | 7.4.0-beta.5 | First official-port release. |
+| 2.0.0-rc.1 | 7.4.0-beta.5 | First release candidate of the official-port line. |
 
 Each fuse.js release triggers a `chore(sync): fuse-js vX.Y.Z` PR. The cross-runtime parity check (`scripts/parity-check.sh`) gates the release tag.
 
@@ -393,8 +393,8 @@ Set `FUSE_JS_PATH` to override the default sibling-checkout location.
 
 ## Contributing
 
-`CONTRIBUTING.md` and `CODE_OF_CONDUCT.md` will land alongside the first public tag.
+`CONTRIBUTING.md` will land in a follow-up. In the meantime, issues and PRs are welcome on [krisk/fuse-swift](https://github.com/krisk/fuse-swift).
 
 ## License
 
-License selection is pending. Will be added before the first public tag.
+[Apache License 2.0](LICENSE). Matches the upstream fuse.js license.

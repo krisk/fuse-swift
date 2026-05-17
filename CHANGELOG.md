@@ -12,7 +12,7 @@ for the branch story. This changelog covers the v2.x line only.
 
 _(nothing since the most recent tag)_
 
-## [2.0.0-rc.1] - Pending
+## [2.0.0-rc.1] - 2026-05-17
 
 First release candidate of the official Swift port of
 [fuse.js](https://github.com/krisk/fuse). fuse-swift v2 is a rewrite,
