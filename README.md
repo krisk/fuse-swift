@@ -86,6 +86,40 @@ print(results[0].item.title)
 
 All initializers throw on `weight <= 0`, so call sites use `try`.
 
+## Highlighting matches
+
+With `includeMatches: true`, each `FuseMatch.indices` carries `[FuseRange]` of `(start, end)` UTF-16 offsets covering the matched runs in the matched text. The pattern is the same regardless of whether you render to ANSI, HTML `<mark>`, `AttributedString`, or anything else — slice the original by the ranges and wrap the matched segments.
+
+```swift
+func highlight(_ value: String, ranges: [FuseRange]) -> String {
+    guard !ranges.isEmpty else { return value }
+    let units = Array(value.utf16)
+    var out = ""
+    var cursor = 0
+    for r in ranges {
+        if r.start > cursor {
+            out += String(decoding: units[cursor..<r.start], as: UTF16.self)
+        }
+        out += "[" + String(decoding: units[r.start..<(r.end + 1)], as: UTF16.self) + "]"
+        cursor = r.end + 1
+    }
+    if cursor < units.count {
+        out += String(decoding: units[cursor..<units.count], as: UTF16.self)
+    }
+    return out
+}
+
+// Given a result `r` from search("Lock", limit: 1):
+// for m in r.matches ?? [] {
+//     print(highlight(m.value ?? "", ranges: m.indices))
+//     // → "The [Lock] Artist"
+// }
+```
+
+**Transform-space caveat.** Indices are UTF-16 offsets in the *transformed* text (post case-fold + diacritic-strip). For inputs whose length is preserved by the configured transforms (ASCII text under defaults, or any text with `isCaseSensitive: true, ignoreDiacritics: false`), the offsets map 1:1 back to the original and the helper above works directly. Inputs that change length under the transforms (Turkish `İ` lowercased, NFD-decomposed accents with `ignoreDiacritics: true`, German `ẞ` expanded to `ss` during diacritic-strip) need a transform-aware helper that recomputes the original-space offsets.
+
+A runnable demo lives at [`Examples/Highlighting/`](Examples/Highlighting/).
+
 ## `FuseOptions` reference
 
 | Option | Default | Notes |
@@ -334,6 +368,13 @@ Two runnable demos live under `Examples/`:
   ```
   cd Examples/Concurrency
   swift run FuseConcurrency
+  ```
+
+- [`Examples/Highlighting/`](Examples/Highlighting/) — slicing `FuseMatch.indices` to wrap matched runs in `[brackets]` (the same pattern works for ANSI, HTML `<mark>`, or `AttributedString`).
+
+  ```
+  cd Examples/Highlighting
+  swift run FuseHighlighting
   ```
 
 ## Syncing with upstream
