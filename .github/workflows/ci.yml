@@ -17,10 +17,13 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - swift: "5.10"
-            xcode: "15.4"
           - swift: "6.x"
             xcode: "latest-stable"
+        # Swift 5.10 on macOS is covered indirectly by the Linux 5.10
+        # job — the package is Foundation-only with no platform-specific
+        # code, so the Swift-5.10-compiler check doesn't add value on
+        # macOS, and the macos-latest runner doesn't ship Xcode 15.x
+        # SDKs needed to select Swift 5.10 directly.
     steps:
       - uses: actions/checkout@v4
       - name: Select Xcode
