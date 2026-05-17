@@ -1,6 +1,10 @@
 # fuse-swift
 
-<!-- Badges (CI / SPM / platforms) will land once CI is set up post-release. -->
+[![CI](https://github.com/krisk/fuse-swift/actions/workflows/ci.yml/badge.svg)](https://github.com/krisk/fuse-swift/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/krisk/fuse-swift?include_prereleases&sort=semver)](https://github.com/krisk/fuse-swift/releases)
+[![Swift](https://img.shields.io/badge/Swift-6.0%2B-orange?logo=swift)](https://www.swift.org)
+[![Platforms](https://img.shields.io/badge/platforms-iOS%20%7C%20macOS%20%7C%20tvOS%20%7C%20watchOS%20%7C%20visionOS%20%7C%20Linux-lightgrey)](Package.swift)
+[![License](https://img.shields.io/github/license/krisk/fuse-swift)](LICENSE)
 
 The official Swift port of [fuse.js](https://github.com/krisk/fuse). Byte-equivalent results, idiomatic Swift API, syncs with each upstream release.
 
