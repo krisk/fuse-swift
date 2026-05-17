@@ -44,18 +44,6 @@ public enum AccessorResult: Sendable, Equatable {
     case multiple([SubRecordValue])
 }
 
-/// `@unchecked Sendable` wrapper around a `KeyPath`. `KeyPath` instances
-/// are value-semantic and thread-safe by design, but `KeyPath: Sendable`
-/// conformance was added late (Swift 6.0) and the `KeyPath<X, Y> & Sendable`
-/// intersection type doesn't type-check under earlier Swift versions
-/// (no concrete type satisfies the intersection, so the @Sendable closure
-/// capture fails inference). This wrapper sidesteps the compiler issue
-/// while preserving the actual safety guarantee.
-fileprivate struct SendableKeyPath<Root, Value>: @unchecked Sendable {
-    let inner: KeyPath<Root, Value>
-    init(_ kp: KeyPath<Root, Value>) { self.inner = kp }
-}
-
 public struct FuseKey<Element>: Sendable {
     public let name: String
     public let weight: Double
@@ -69,7 +57,7 @@ public struct FuseKey<Element>: Sendable {
 
     public init(
         _ name: String,
-        keyPath: KeyPath<Element, String>,
+        keyPath: KeyPath<Element, String> & Sendable,
         weight: Double = 1.0
     ) throws {
         guard weight > 0 else {
@@ -78,13 +66,12 @@ public struct FuseKey<Element>: Sendable {
         self.name = name
         self.weight = weight
         self.source = .string(name)
-        let box = SendableKeyPath(keyPath)
-        self.accessor = .eager { value in .single(value[keyPath: box.inner]) }
+        self.accessor = .eager { value in .single(value[keyPath: keyPath]) }
     }
 
     public init(
         _ name: String,
-        keyPath: KeyPath<Element, String?>,
+        keyPath: KeyPath<Element, String?> & Sendable,
         weight: Double = 1.0
     ) throws {
         guard weight > 0 else {
@@ -93,9 +80,8 @@ public struct FuseKey<Element>: Sendable {
         self.name = name
         self.weight = weight
         self.source = .string(name)
-        let box = SendableKeyPath(keyPath)
         self.accessor = .eager { value in
-            if let s = value[keyPath: box.inner] { return .single(s) }
+            if let s = value[keyPath: keyPath] { return .single(s) }
             return .none
         }
     }

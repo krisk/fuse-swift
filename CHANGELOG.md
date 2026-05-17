@@ -79,8 +79,8 @@ Targets fuse.js `7.4.0-beta.5`.
 
 ### Platforms
 
-iOS 15+, macOS 12+, tvOS 15+, watchOS 8+, visionOS 1+, Linux. Builds
-clean on Swift 5.10 and Swift 6.x under
+iOS 15+, macOS 12+, tvOS 15+, watchOS 8+, visionOS 1+, Linux.
+Requires Swift 6.0 or newer; builds clean under
 `-strict-concurrency=complete -warnings-as-errors`.
 
 ### Compatibility
