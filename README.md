@@ -353,7 +353,7 @@ The 1.x line is the previous `krisk/fuse-swift` codebase (top tag 1.4.0). It is 
 
 ## Examples
 
-Two runnable demos live under `Examples/`:
+Three runnable demos live under `Examples/`:
 
 - [`Examples/CLI/`](Examples/CLI/) — string-list and keyed object search.
 
