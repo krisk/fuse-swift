@@ -132,5 +132,5 @@ tags will ever ship.
 
 ---
 
-[Unreleased]: https://github.com/krisk/fuse-swift/compare/v2.0.0-rc.1...HEAD
-[2.0.0-rc.1]: https://github.com/krisk/fuse-swift/releases/tag/v2.0.0-rc.1
+[Unreleased]: https://github.com/krisk/fuse-swift/compare/2.0.0-rc.1...HEAD
+[2.0.0-rc.1]: https://github.com/krisk/fuse-swift/releases/tag/2.0.0-rc.1

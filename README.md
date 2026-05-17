@@ -6,7 +6,7 @@ The official Swift port of [fuse.js](https://github.com/krisk/fuse). Byte-equiva
 
 ## Status
 
-v2.0.0-rc.1 is the first release candidate. v1 scope is feature-complete and has 253 unit tests plus a cross-runtime parity check against fuse-js 7.4.0-beta.5 (25 query cases, 138 result records, all match within 1e-9 score tolerance). Promotion to `v2.0.0` follows a short feedback window.
+2.0.0-rc.1 is the first release candidate. v1 scope is feature-complete and has 253 unit tests plus a cross-runtime parity check against fuse-js 7.4.0-beta.5 (25 query cases, 138 result records, all match within 1e-9 score tolerance). Promotion to `2.0.0` follows a short feedback window.
 
 ## Install
 
