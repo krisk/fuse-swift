@@ -38,8 +38,8 @@ jobs:
         run: swift build -c debug
       - name: Test
         run: swift test --parallel
-      - name: Strict concurrency
-        run: swift build -Xswiftc -strict-concurrency=complete -Xswiftc -warnings-as-errors
+      - name: Strict concurrency (test + warnings-as-errors)
+        run: swift test -Xswiftc -strict-concurrency=complete -Xswiftc -warnings-as-errors
 
   linux:
     name: Linux / ${{ matrix.image }}
@@ -65,8 +65,8 @@ jobs:
         run: swift build -c debug
       - name: Test
         run: swift test --parallel
-      - name: Strict concurrency
-        run: swift build -Xswiftc -strict-concurrency=complete -Xswiftc -warnings-as-errors
+      - name: Strict concurrency (test + warnings-as-errors)
+        run: swift test -Xswiftc -strict-concurrency=complete -Xswiftc -warnings-as-errors
 
   apple-platforms:
     name: ${{ matrix.platform }} compile-only
