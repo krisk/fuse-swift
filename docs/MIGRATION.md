@@ -78,7 +78,7 @@ The v2 line is the official Swift port of [fuse.js](https://github.com/krisk/fus
 
 - **Public surface.** `Fuse.Search<Element>` for string-list and keyed object collections, `Fuse.match` for one-shot pattern-vs-text matching, `Fuse.createIndex` / `Fuse.parseIndex` / `FuseIndex.toJSON` for persisted indexes, the full `FuseOptions` surface (16 flags, defaults match fuse.js exactly).
 - **Parity.** Results match fuse.js byte-for-byte on match indices / refIndex / ordering, with floating-point tolerance on scores. A cross-runtime parity harness (`make release`) gates the release tag.
-- **Platforms.** iOS 15+, macOS 12+, tvOS 15+, watchOS 8+, visionOS 1+, Linux. Builds clean on Swift 5.9 and Swift 6.x under `-strict-concurrency=complete`.
+- **Platforms.** iOS 15+, macOS 12+, tvOS 15+, watchOS 8+, visionOS 1+, Linux. Builds clean on Swift 5.10 and Swift 6.x under `-strict-concurrency=complete`.
 
 Deferred to v1.1 (additive, non-breaking): extended search (`useExtendedSearch`), logical search (`$and` / `$or` query trees), token search (`useTokenSearch` / TF-IDF).
 

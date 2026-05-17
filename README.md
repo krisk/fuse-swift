@@ -17,7 +17,7 @@ dependencies: [
 ]
 ```
 
-Platforms: iOS 15+, macOS 12+, tvOS 15+, watchOS 8+, visionOS 1+, Linux. Builds clean under Swift 5.9 and Swift 6.x with `-strict-concurrency=complete`.
+Platforms: iOS 15+, macOS 12+, tvOS 15+, watchOS 8+, visionOS 1+, Linux. Builds clean under Swift 5.10 and Swift 6.x with `-strict-concurrency=complete`.
 
 ## Quick start: string array
 

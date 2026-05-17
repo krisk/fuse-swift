@@ -17,8 +17,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - swift: "5.9"
-            xcode: "15.2"
+          - swift: "5.10"
+            xcode: "15.4"
           - swift: "6.x"
             xcode: "latest-stable"
     steps:
@@ -48,7 +48,7 @@ jobs:
       fail-fast: false
       matrix:
         image:
-          - "swift:5.9.2-jammy"
+          - "swift:5.10-jammy"
           - "swift:6.0-jammy"
     container:
       image: ${{ matrix.image }}
