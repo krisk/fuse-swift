@@ -8,8 +8,7 @@ import Foundation
 /// 3. Apply `NON_DECOMPOSABLE_MAP` for chars that survive NFD unchanged.
 ///
 /// `String.folding(options: .diacriticInsensitive)` is **not** used; it relies
-/// on ICU and diverges from upstream on real inputs (Edge Cases item 4 in the
-/// plan).
+/// on ICU and diverges from upstream on real inputs.
 enum Diacritics {
     static func strip(_ str: String) -> String {
         let nfd = str.decomposedStringWithCanonicalMapping

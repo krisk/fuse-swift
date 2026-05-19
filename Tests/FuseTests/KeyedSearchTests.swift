@@ -1,15 +1,14 @@
 import XCTest
 @testable import Fuse
 
-/// Phase-8 parity subset of `../fuse-js/test/fuzzy-search.test.js` —
+/// Parity subset of `../fuse-js/test/fuzzy-search.test.js` covering
 /// keyed-search cases (deep keys, custom getFn, weighted keys, array-form
 /// path, array recursion). Each test cites its upstream counterpart.
 ///
 /// Oracle scores were captured against fuse-js `7.4.0-beta.5` running on
-/// the same fixtures via `dist/fuse.mjs`; see the plan's parity-oracle
-/// section. Very small scores (post-`pow(base, exp)` compounding) use
-/// `assertApproxRel` because an absolute `1e-4` tolerance is meaningless
-/// at `1e-12` magnitudes.
+/// the same fixtures via `dist/fuse.mjs`. Very small scores
+/// (post-`pow(base, exp)` compounding) use `assertApproxRel` because an
+/// absolute `1e-4` tolerance is meaningless at `1e-12` magnitudes.
 final class KeyedSearchTests: XCTestCase {
 
     // MARK: - Deep key search (upstream fuzzy-search.test.js:93-146)
@@ -229,10 +228,10 @@ final class KeyedSearchTests: XCTestCase {
     }
 
     func testWeightedKeysNotSummingToOnePreservesScoreParity() throws {
-        // Plan-required parity case: keys=[title, {author, weight:2}] —
-        // weights do NOT sum to 1. Asserts byte-equivalent scores and
-        // ordering against fuse-js's _searchObjectList (which feeds raw
-        // weights into computeScore via match.key.weight).
+        // Parity case for weights that do NOT sum to 1: keys=[title,
+        // {author, weight:2}]. Asserts byte-equivalent scores and ordering
+        // against fuse-js's _searchObjectList (which feeds raw weights into
+        // computeScore via match.key.weight).
         let opts = try FuseOptions<WBook>(
             includeScore: true,
             keys: [

@@ -2,8 +2,8 @@ import Foundation
 
 /// Per-key bookkeeping for keyed search. Mirrors
 /// `../fuse-js/src/tools/KeyStore.ts` minus the sum-to-1 weight
-/// normalization (the v1 plan keeps raw per-key weights — normalization is
-/// only applied to the deferred `_searchLogical` path).
+/// normalization. v1 keeps raw per-key weights; normalization only applies
+/// to the deferred `_searchLogical` path.
 ///
 /// Storage is parallel arrays indexed by **slot** (the position of the
 /// `FuseKey` in user-supplied `options.keys`), plus an id → slot map for

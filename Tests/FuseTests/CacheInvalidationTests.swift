@@ -94,10 +94,10 @@ final class CacheInvalidationTests: XCTestCase {
     // ── invariant: remove() with no matches does NOT invalidate ───────
 
     func testRemoveWithNoMatchesDoesNotInvalidateCache() throws {
-        // Plan-load-bearing invariant; upstream cache-invalidation.test.js:48-55.
-        // The cached BitapSearch instance must survive byte-identical across
-        // a no-op remove, so a subsequent identical query returns the same
-        // searcher reference (no rebuild).
+        // Upstream cache-invalidation.test.js:48-55. The cached BitapSearch
+        // instance must survive byte-identical across a no-op remove, so a
+        // subsequent identical query returns the same searcher reference
+        // (no rebuild).
         let fuse = try makeFuse([.init(title: "apple")])
         _ = fuse.search("apple")
         let cached = try XCTUnwrap(fuse.cachedSearcher)

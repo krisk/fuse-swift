@@ -1,9 +1,9 @@
 import XCTest
 @testable import Fuse
 
-/// Phase-10 sort-behavior coverage. Sort stability and `sortFn` override
-/// are not in upstream `optimizations.test.js`, so this file ports the
-/// plan's explicit sort contract directly:
+/// Sort-behavior coverage. Sort stability and `sortFn` override are not
+/// covered by upstream `optimizations.test.js`, so this file asserts the
+/// sort contract directly:
 ///
 ///  1. Default stable sort on `(score, refIndex)` — ties broken by source
 ///     order.

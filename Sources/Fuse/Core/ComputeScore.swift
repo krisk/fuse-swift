@@ -5,8 +5,8 @@ import Foundation
 ///
 /// Formula per match: `base ^ exponent` where
 ///   - `base = score`, except when `score == 0 && weight != nil`, in which
-///     case `base = Double.ulpOfOne` (mirrors JS `Number.EPSILON` —
-///     Edge Cases item 8).
+///     case `base = Double.ulpOfOne` (the Swift equivalent of JS
+///     `Number.EPSILON`).
 ///   - `exponent = (weight ?? 1) * (ignoreFieldNorm ? 1 : norm)`
 ///
 /// `weight == nil` encodes upstream's `key ? key.weight : null` shape for

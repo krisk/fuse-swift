@@ -1,7 +1,7 @@
 import XCTest
 @testable import Fuse
 
-/// Phase-5 tests for the `BitapSearch` class: case-folding pre-pass,
+/// Tests for the `BitapSearch` class: case-folding pre-pass,
 /// diacritic-strip pre-pass, and pattern chunking for >32-code-unit patterns.
 final class BitapSearchTests: XCTestCase {
     // ── lowercase pre-pass ────────────────────────────────────────────
@@ -53,12 +53,12 @@ final class BitapSearchTests: XCTestCase {
         XCTAssertNotEqual(r.score, foldedResult.score)
     }
 
-    // ── jsLowercased parity matrix (Edge Cases item 5b notes) ─────────
+    // ── jsLowercased parity matrix ────────────────────────────────────
     //
-    // These cases come from the plan's lowercase-parity matrix. The current
-    // implementation uses Swift's `.lowercased()` which uses Unicode default
-    // case folding. If any of these fail, switch to a source-aware
-    // `jsLowercased` helper (see plan).
+    // These cases verify that Swift's `.lowercased()` (Unicode default
+    // case folding) matches JavaScript's `.toLowerCase()` for the
+    // characters fuse-js encounters via bitap. If any of these fail, the
+    // bitap layer would need a source-aware `jsLowercased` helper instead.
 
     func testTurkishDottedICapitalLowercases() {
         // JS toLowerCase("İ") → "i\u{0307}" (i + combining dot above).

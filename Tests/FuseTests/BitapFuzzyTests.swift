@@ -42,8 +42,8 @@ final class BitapFuzzyTests: XCTestCase {
     }
 
     func testEmptyQueryHasNoScoreOrMatches() throws {
-        // Per plan: even with includeScore / includeMatches true, the
-        // empty-query branch emits `{item, refIndex}` only.
+        // Even with includeScore / includeMatches true, the empty-query
+        // branch emits `{item, refIndex}` only.
         let fuse = try setup(nil, FuseOptions<String>(includeMatches: true, includeScore: true))
         let result = fuse.search("")
         XCTAssertEqual(result.count, 3)

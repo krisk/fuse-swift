@@ -135,7 +135,7 @@ final class MatchTests: XCTestCase {
         XCTAssertEqual(ignoredEarly.score, ignoredLate.score)
     }
 
-    // ── token-search skips (plan explicit-skip list) ──────────────────
+    // ── token-search skips ────────────────────────────────────────────
 
     func testThrowsWhenUseTokenSearchTrueFullBuild() throws {
         // Upstream match.test.js:69. v1 does not ship useTokenSearch;

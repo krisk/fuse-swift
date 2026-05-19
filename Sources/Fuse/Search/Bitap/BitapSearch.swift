@@ -1,8 +1,11 @@
 import Foundation
 
-/// Bitap maximum pattern length per mask. JS uses 32-bit ints throughout the
-/// bitap operations; longer patterns are split into 32-code-unit chunks above
-/// this layer. `../fuse-js/src/search/bitap/constants.ts:2`.
+/// Bitap maximum pattern length per mask. Longer patterns are split into
+/// chunks of this size above this layer, and the per-chunk scores / merged
+/// indices depend on the chunk boundary, so this is a parity constant with
+/// fuse-js, not a Swift width limit. Widening to 64 would silently diverge
+/// from the oracle on patterns > 32 code units.
+/// `../fuse-js/src/search/bitap/constants.ts:2`.
 let bitapMaxBits: Int = 32
 
 struct BitapSearchOptions {
@@ -26,9 +29,11 @@ struct BitapSearchResult {
 /// Low-level Bitap search over a single pattern chunk (length ≤ 32 UTF-16
 /// code units). Literal port of `../fuse-js/src/search/bitap/search.ts`.
 ///
-/// Operates in UTF-16 code-unit space (see Edge Cases item 5b in the plan).
-/// Both `text` and `pattern` are pre-lowercased / pre-diacritic-stripped by
-/// the caller (the `BitapSearch` class handles that pass).
+/// Operates in UTF-16 code-unit space to match JavaScript's
+/// `String.prototype.length` / `charCodeAt(i)` indexing, which is what
+/// fuse-js uses throughout bitap. Both `text` and `pattern` are
+/// pre-lowercased / pre-diacritic-stripped by the caller (the
+/// `BitapSearch` class handles that pass).
 func bitapSingleChunkSearch(
     text: [UInt16],
     pattern: [UInt16],

@@ -278,8 +278,7 @@ final class AccessorSemanticsTests: XCTestCase {
 
     func testTerminalArrayOfObjectsStringifiesAsObjectObject() throws {
         // Encodes to `{a: [{}]}`; per JS `value + ''` semantics, the inner
-        // object becomes the literal string `"[object Object]"`. Plan
-        // accessor-coverage item 10.
+        // object becomes the literal string `"[object Object]"`.
         struct Empty: Encodable {}
         struct Doc: Encodable { let a: [Empty] }
         let result = try ValueAccessor.defaultGet(Doc(a: [Empty()]), path: ["a"])
@@ -303,8 +302,8 @@ final class AccessorSemanticsTests: XCTestCase {
     }
 
     func testTerminalMixedArrayStringifiesElementByElement() throws {
-        // `{a: [{x: 1}, 5]}` — mixed object/scalar at the terminal step.
-        // Plan: indexed strings "[object Object]" and "5" at i:0 / i:1.
+        // `{a: [{x: 1}, 5]}`: mixed object/scalar at the terminal step.
+        // Expected indexed strings: "[object Object]" and "5" at i:0 / i:1.
         // Use [JSONValue]-equivalent representation via a hand-built tree.
         struct Mixed: Encodable {
             // Drive both shapes through one wrapper.

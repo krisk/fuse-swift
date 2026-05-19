@@ -150,10 +150,10 @@ extension Fuse {
 
         /// Search for `pattern` across the collection.
         ///
-        /// Per the plan's empty-query contract: blank / whitespace queries
-        /// return one `FuseResult` per doc in `refIndex` order with
-        /// `score = nil` and `matches = nil` (regardless of `includeScore` /
-        /// `includeMatches`). `limit > 0` slices the result.
+        /// Blank / whitespace queries return one `FuseResult` per doc in
+        /// `refIndex` order with `score = nil` and `matches = nil`
+        /// (regardless of `includeScore` / `includeMatches`). `limit > 0`
+        /// slices the result.
         ///
         /// When `limit > 0` and the query is non-blank, the heap-based
         /// top-K path runs **regardless of `shouldSort: false`** (parity
