@@ -175,7 +175,7 @@ The supplied index is copy-on-adopt — `Fuse.Search` never mutates the user's i
 
 The translation is mechanical. The biggest surface change is that fuse-swift puts the element type in the generic (`Fuse.Search<Book>`) rather than the constructor argument, and keys are typed `FuseKey` values rather than strings/dicts.
 
-**Constructor.**
+**Constructor**
 
 ```js
 // fuse.js
@@ -190,7 +190,7 @@ let fuse = try Fuse.Search<Book>(list, options: try FuseOptions<Book>(
 ))
 ```
 
-**String keys → typed key paths.**
+**String keys → typed key paths**
 
 ```js
 // fuse.js
@@ -205,7 +205,7 @@ keys: [
 ]
 ```
 
-**Weighted keys.**
+**Weighted keys**
 
 ```js
 // fuse.js
@@ -223,7 +223,7 @@ keys: [
 ]
 ```
 
-**Array-form path (literal-dot segments).**
+**Array-form path (literal-dot segments)**
 
 ```js
 // fuse.js
@@ -235,7 +235,7 @@ keys: [['author', 'first.name']]
 keys: [try FuseKey<Book>(path: ["author", "first.name"])]
 ```
 
-**Custom `getFn`.**
+**Custom `getFn`**
 
 ```js
 // fuse.js
@@ -253,7 +253,7 @@ try Fuse.Search<Book>(
 )
 ```
 
-**Search.**
+**Search**
 
 ```js
 // fuse.js
@@ -265,7 +265,7 @@ fuse.search('apple', { limit: 5 })
 fuse.search("apple", limit: 5)
 ```
 
-**One-shot `Fuse.match`.**
+**One-shot `Fuse.match`**
 
 ```js
 // fuse.js
@@ -351,7 +351,7 @@ For more patterns (debounced search-as-you-type, `async let` parallel across mul
 
 Each fuse.js release triggers a `chore(sync): fuse-js vX.Y.Z` PR. The cross-runtime parity check (`scripts/parity-check.sh`) gates the release tag.
 
-## Migrating from `krisk/fuse-swift` 1.x
+## Migrating from `fuse-swift` 1.x
 
 The 1.x line is the previous `krisk/fuse-swift` codebase (top tag 1.4.0). It is preserved on the `legacy` branch — every commit hash and tag intact — and the `master` branch is frozen as a tombstone for SPM consumers who pinned `.branch("master")`. The official-port rewrite lives on `main`. See [`docs/MIGRATION.md`](docs/MIGRATION.md) for the upgrade path.
 
